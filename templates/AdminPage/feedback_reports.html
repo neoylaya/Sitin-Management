@@ -1,0 +1,113 @@
+{% extends "AdminPage/layout.html" %}
+{% block title %}Feedback Reports{% endblock %}
+{% block page_title %}Feedback Reports{% endblock %}
+{% block breadcrumb_current %}Feedback Reports{% endblock %}
+
+{% block extra_head %}
+<style>
+  .feedback-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .feedback-count {
+    font-size: 0.75rem; color: var(--text-3); font-weight: 500;
+  }
+  .message-cell {
+    max-width: 380px;
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.5;
+    word-break: break-word;
+  }
+  @media print {
+    .topnav, .breadcrumb, .feedback-toolbar, .panel-header, nav { display: none !important; }
+    body { background: white !important; }
+    .panel { box-shadow: none !important; border: none !important; padding: 0 !important; }
+    .page-wrapper { padding-top: 0 !important; }
+    .section-content { padding: 0 !important; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <h3>Feedback Report</h3>
+  </div>
+
+  <div class="feedback-toolbar">
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <div class="search-input-wrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="feedbackSearch" placeholder="Filter feedback..." oninput="filterFeedback()">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="window.print()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print
+      </button>
+    </div>
+    <span class="feedback-count">{{ feedbacks|length }} feedback{{ 's' if feedbacks|length != 1 else '' }}</span>
+  </div>
+
+  {% if feedbacks %}
+  <div style="overflow-x:auto;">
+    <table class="data-table" id="feedbackTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student ID</th>
+          <th>Name</th>
+          <th>Laboratory</th>
+          <th>Date</th>
+          <th>Message</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in feedbacks %}
+        <tr>
+          <td style="color:var(--text-3); font-size:0.78rem;">{{ loop.index }}</td>
+          <td style="font-family:'Syne',sans-serif; font-weight:700;">{{ f.student_id }}</td>
+          <td style="font-weight:500;">{{ f.lastname or '' }}{% if f.lastname and f.firstname %}, {% endif %}{{ f.firstname or '' }}</td>
+          <td><span class="badge badge-gold">{{ f.lab_room }}</span></td>
+          <td style="color:var(--text-2); font-size:0.8rem; white-space:nowrap;">{{ f.created_at }}</td>
+          <td class="message-cell">{{ f.message }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin_delete_feedback', feedback_id=f.id) }}"
+              onsubmit="return confirm('Delete this feedback from {{ f.firstname or f.student_id }}?')">
+              <button type="submit" class="btn btn-danger btn-sm">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                Delete
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <p>No feedback submitted yet.</p>
+    <span>Student feedback will appear here once submitted.</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function filterFeedback() {
+    const q = document.getElementById('feedbackSearch').value.toLowerCase();
+    document.querySelectorAll('#feedbackTable tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

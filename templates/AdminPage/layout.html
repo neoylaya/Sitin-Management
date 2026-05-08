@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CCS Admin | {% block title %}Dashboard{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <nav class="topnav">
+    <div class="topnav-left">
+      <div class="nav-brand">
+        <img src="{{ url_for('static', filename='uclogo.png') }}" alt="UC" class="brand-logo">
+        <div class="brand-text">
+          <span class="brand-title">CCS Admin</span>
+          <span class="brand-sub">MONITORING SYSTEM</span>
+        </div>
+      </div>
+      <div class="nav-tabs">
+        <a href="{{ url_for('admin_home') }}" class="nav-tab {% if active == 'home' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Home
+        </a>
+        <a href="{{ url_for('admin_search') }}" class="nav-tab {% if active == 'search' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Search
+        </a>
+        <a href="{{ url_for('admin_students') }}" class="nav-tab {% if active == 'students' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Students
+        </a>
+        <a href="{{ url_for('admin_current_sitin') }}" class="nav-tab {% if active == 'sitin' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Sit-In
+        </a>
+        <a href="{{ url_for('admin_sitin_records') }}" class="nav-tab {% if active == 'records' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Sit-In Records
+        </a>
+        <a href="{{ url_for('admin_sitin_reports') }}" class="nav-tab {% if active == 'reports' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Sit-In Reports
+        </a>
+        <a href="{{ url_for('admin_feedback_reports') }}" class="nav-tab {% if active == 'feedback' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Feedback
+        </a>
+        <a href="{{ url_for('admin_reservation') }}" class="nav-tab {% if active == 'reservation' %}active{% endif %}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Reservation
+        </a>
+        <a href="{{ url_for('admin_lab_software') }}" class="nav-tab {% if active == 'lab_software' %}active{% endif %}">
+   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+        stroke-linecap="round" stroke-linejoin="round">
+     <rect x="2" y="3" width="20" height="14" rx="2"/>
+    <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+   </svg>
+   Lab Software
+   </a>
+        <a href="{{ url_for('admin_analytics') }}" class="nav-tab {% if active == 'analytics' %}active{% endif %}">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+  Analytics
+</a>
+      </div>
+    </div>
+    <div class="topnav-right">
+      <div class="nav-user">
+        <div class="nav-avatar">A</div>
+        <span class="nav-username">Admin</span>
+        <span class="nav-badge">CCS</span>
+      </div>
+      <a href="{{ url_for('admin_logout') }}" class="btn-logout">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log Out
+      </a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="breadcrumb">
+      <span class="bc-title">{% block page_title %}Dashboard{% endblock %}</span>
+      <div class="bc-path">
+        <span>CCS Admin</span>
+        <span class="bc-sep">›</span>
+        <span>{% block breadcrumb_current %}Dashboard{% endblock %}</span>
+      </div>
+    </div>
+
+    <div class="section-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CCS | Register</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='registration.css') }}">
+</head>
+<body>
+
+  <nav>
+    <a href="/" class="logo">
+      <img src="{{ url_for('static', filename='uclogo.png') }}" alt="UC CCS Logo" class="nav-logo-img">
+      <div class="logo-text">
+        <span class="logo-title">University of Cebu</span>
+        <span class="logo-sub">CCS SIT-IN MONITORING</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/community">Community</a>
+      <a href="/about">About</a>
+      <a class="btn-ghost" href="/login">Login</a>
+      <a class="btn-solid" href="/register">Register</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="reg-wrapper">
+
+      <div class="form-header">
+        <div class="header-left">
+          <img src="{{ url_for('static', filename='uclogo.png') }}" alt="UC CCS Logo" class="reg-logo">
+          <div class="header-text">
+            <div class="header-eyebrow">Student Portal</div>
+            <h2>Create Account</h2>
+            <p>Fill in your details to get started</p>
+          </div>
+        </div>
+        <div class="steps">
+          <div class="step active">1</div>
+          <div class="step">2</div>
+          <div class="step">3</div>
+        </div>
+      </div>
+
+      <div class="form-body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+
+          <div class="section-label">Personal Information</div>
+          <div class="fields-grid">
+            <div class="field">
+              <label>Last Name</label>
+              <input type="text" name="lastname" placeholder="Dela Cruz">
+            </div>
+            <div class="field">
+              <label>First Name</label>
+              <input type="text" name="firstname" placeholder="Juan">
+            </div>
+            <div class="field">
+              <label>Middle Name</label>
+              <input type="text" name="middlename" placeholder="Santos">
+            </div>
+            <div class="field">
+              <label>ID Number</label>
+              <input type="text" name="id" placeholder="2021-12345">
+            </div>
+            <div class="field full">
+              <label>Address</label>
+              <input type="text" name="address" placeholder="City, Province">
+            </div>
+          </div>
+
+          <div class="section-label">Academic Information</div>
+          <div class="fields-grid">
+            <div class="field">
+              <label>Course</label>
+              <select name="course" required>
+                <option value="">Select your course</option>
+
+                <optgroup label="🖥️ College of Computer Studies">
+                  <option value="BSIT">BS Information Technology</option>
+                  <option value="BSCS">BS Computer Science</option>
+                </optgroup>
+
+                <optgroup label="💼 College of Business and Accountancy">
+                  <option value="BSA">BS Accountancy</option>
+                  <option value="BSBA-FM">BSBA - Financial Management</option>
+                  <option value="BSBA-MM">BSBA - Marketing Management</option>
+                  <option value="BSBA-HRM">BSBA - Human Resource Management</option>
+                  <option value="BSBA-OM">BSBA - Operations Management</option>
+                  <option value="BSMA">BS Management Accounting</option>
+                  <option value="BSEntrep">BS Entrepreneurship</option>
+                </optgroup>
+
+                <optgroup label="⚙️ College of Engineering">
+                  <option value="BSCE">BS Civil Engineering</option>
+                  <option value="BSEE">BS Electrical Engineering</option>
+                  <option value="BSME">BS Mechanical Engineering</option>
+                  <option value="BSIE">BS Industrial Engineering</option>
+                  <option value="BSECE">BS Electronics Engineering</option>
+                </optgroup>
+
+                <optgroup label="📚 College of Education">
+                  <option value="BEED">Bachelor of Elementary Education</option>
+                  <option value="BSED-ENG">BSED - English</option>
+                  <option value="BSED-MATH">BSED - Mathematics</option>
+                  <option value="BSED-SCI">BSED - Science</option>
+                  <option value="BSED-FIL">BSED - Filipino</option>
+                  <option value="BSED-SOSHIL">BSED - Social Studies</option>
+                  <option value="BPED">BS Physical Education</option>
+                </optgroup>
+
+                <optgroup label="🏥 College of Nursing">
+                  <option value="BSN">BS Nursing</option>
+                </optgroup>
+
+                <optgroup label="🎨 College of Arts and Sciences">
+                  <option value="ABCOM">AB Communication</option>
+                  <option value="ABPOLSCI">AB Political Science</option>
+                  <option value="BSPSY">BS Psychology</option>
+                  <option value="BSBIO">BS Biology</option>
+                  <option value="BSMATH">BS Mathematics</option>
+                </optgroup>
+
+                <optgroup label="🏛️ College of Architecture and Fine Arts">
+                  <option value="BSARCH">BS Architecture</option>
+                  <option value="BSID">BS Interior Design</option>
+                  <option value="BSFA">BS Fine Arts</option>
+                </optgroup>
+
+                <optgroup label="🏨 College of Tourism and Hospitality Management">
+                  <option value="BSTM">BS Tourism Management</option>
+                  <option value="BSHM">BS Hospitality Management</option>
+                </optgroup>
+
+                <optgroup label="⚖️ College of Criminal Justice Education">
+                  <option value="BSCRIM">BS Criminology</option>
+                </optgroup>
+
+                <optgroup label="💊 College of Pharmacy">
+                  <option value="BSPHAR">BS Pharmacy</option>
+                </optgroup>
+
+                <optgroup label="⚓ College of Maritime Education">
+                  <option value="BSMARE">BS Marine Engineering</option>
+                  <option value="BSMT">BS Marine Transportation</option>
+                </optgroup>
+
+                <optgroup label="⚕️ College of Allied Medical Sciences">
+                  <option value="BSMT-MED">BS Medical Technology</option>
+                  <option value="BSRT">BS Radiologic Technology</option>
+                  <option value="BSOT">BS Occupational Therapy</option>
+                  <option value="BSPT">BS Physical Therapy</option>
+                </optgroup>
+
+                <optgroup label="📜 College of Law">
+                  <option value="JD">Juris Doctor</option>
+                </optgroup>
+
+                <optgroup label="🎓 Senior High School">
+                  <option value="SHS-STEM">SHS - STEM</option>
+                  <option value="SHS-ABM">SHS - ABM</option>
+                  <option value="SHS-HUMSS">SHS - HUMSS</option>
+                  <option value="SHS-TVL">SHS - TVL</option>
+                </optgroup>
+
+              </select>
+            </div>
+            <div class="field">
+              <label>Course Level / Year</label>
+              <select name="level">
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label>Email Address</label>
+              <input type="email" name="email" placeholder="you@school.edu.ph">
+            </div>
+          </div>
+
+          <div class="section-label">Security</div>
+          <div class="fields-grid">
+            <div class="field">
+              <label>Password</label>
+              <input type="password" name="password" placeholder="Create a password">
+            </div>
+            <div class="field">
+              <label>Repeat Password</label>
+              <input type="password" name="confirm_password" placeholder="Confirm password">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <div class="already">Already have an account? <a href="/login">Sign in</a></div>
+            <div class="action-right">
+              <a href="/">← Back to Home</a>
+              <button type="submit">Register →</button>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+</body>
+</html>

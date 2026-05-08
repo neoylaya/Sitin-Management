@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CCS | About</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='about.css') }}">
+</head>
+<body>
+
+  <nav>
+    <a href="/" class="logo">
+      <img src="{{ url_for('static', filename='uclogo.png') }}" alt="UC CCS Logo" class="nav-logo-img">
+      <div class="logo-text">
+        <span class="logo-title">University of Cebu</span>
+        <span class="logo-sub">CCS SIT-IN MONITORING</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/community">Community</a>
+      <a href="/about" class="active">About</a>
+      <a class="btn-ghost" href="/login">Login</a>
+      <a class="btn-solid" href="/register">Register</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- PAGE HEADER -->
+    <section class="page-header">
+      <div class="page-header-inner">
+        <div class="badge">About the System</div>
+        <h1>Built for <span>CCS Students</span><br>& Faculty</h1>
+        <p class="header-desc">
+          The CCS Sit-In Monitoring System is designed to streamline lab usage,
+          track attendance, and give administrators full visibility over student activity
+          in the College of Computer Studies.
+        </p>
+      </div>
+    </section>
+
+    <!-- MISSION & VISION -->
+    <section class="section">
+      <div class="section-inner">
+        <div class="two-col">
+
+          <div class="glass-card">
+            <div class="card-icon">🎯</div>
+            <h3>Our Mission</h3>
+            <p>“University of Cebu offers affordable and quality education responsive to the demands of local and international communities.”</p>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-icon">🔭</div>
+            <h3>Our Vision</h3>
+            <p>“Democratize quality education. Be the visionary and industry leader. Give hope and transform lives.”</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="section alt">
+      <div class="section-inner">
+        <div class="section-label">What We Offer</div>
+        <h2 class="section-title">System <span>Features</span></h2>
+        <div class="features-grid">
+
+          <div class="feature-card">
+            <div class="feat-icon">🔐</div>
+            <h4>Secure Authentication</h4>
+            <p>Students and staff log in with their institutional ID. Accounts are verified and protected.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feat-icon">📋</div>
+            <h4>Sit-In Tracking</h4>
+            <p>Real-time logging of student sit-in sessions per lab room with time-in and time-out records.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feat-icon">📊</div>
+            <h4>Admin Dashboard</h4>
+            <p>Administrators get a full overview of active sessions, student history, and usage analytics.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feat-icon">📈</div>
+            <h4>Reports & Analytics</h4>
+            <p>Generate detailed reports on lab usage, peak hours, and per-student attendance records.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feat-icon">🖥️</div>
+            <h4>Lab Management</h4>
+            <p>Track which labs are available, occupied, or under maintenance at any given time.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feat-icon">🔔</div>
+            <h4>Notifications</h4>
+            <p>Students and admins receive alerts for session limits, announcements, and lab updates.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- TEAM / COLLEGE INFO -->
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-label">The College</div>
+        <h2 class="section-title">College of <span>Computer Studies</span></h2>
+
+        <div class="about-block">
+          <div class="about-text">
+            <p>The <strong>College of Computer Studies (CCS)</strong> at the University of Cebu is dedicated to producing competent and globally competitive IT professionals. With multiple state-of-the-art computer laboratories, the college supports hundreds of students every semester.</p>
+            <p>This monitoring system was developed to address the growing need for a structured, digital approach to managing sit-in sessions — replacing outdated manual logbooks with a modern, accessible web application.</p>
+            <div class="about-stats">
+              <div class="astat">
+                <span class="astat-num">500+</span>
+                <span class="astat-label">CCS Students</span>
+              </div>
+              <div class="astat">
+                <span class="astat-num">5</span>
+                <span class="astat-label">Computer Labs</span>
+              </div>
+              <div class="astat">
+                <span class="astat-num">30+</span>
+                <span class="astat-label">Faculty Members</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="about-card glass-card">
+            <div class="card-icon">🏫</div>
+            <h3>University of Cebu</h3>
+            <p>Fully committed to delivering accessible, quality education through innovation and technology.</p>
+            <ul class="about-list">
+              <li>✦ Established IT programs</li>
+              <li>✦ Modern lab facilities</li>
+              <li>✦ Student-centered services</li>
+              <li>✦ Accredited curricula</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <div class="cta-inner">
+        <h2>Ready to get started?</h2>
+        <p>Create your account and start tracking your sit-in sessions today.</p>
+        <div class="cta-btns">
+          <a href="/register" class="btn-primary">Create Account</a>
+          <a href="/login" class="btn-secondary">Sign In</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>

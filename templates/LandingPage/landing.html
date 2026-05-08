@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCS | Home</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='landing.css') }}">
+  <style>
+    /* ── Leaderboard Section ── */
+    .leaderboard-section {
+      padding: 60px 5% 80px;
+      position: relative; z-index: 1;
+    }
+    .section-header { text-align: center; margin-bottom: 36px; }
+    .section-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.3);
+      color: #b45309;
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 99px; margin-bottom: 14px;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.5rem, 2.8vw, 2rem);
+      font-weight: 800; color: var(--dark);
+      margin-bottom: 10px; letter-spacing: -0.5px;
+    }
+    .section-title span {
+      background: linear-gradient(135deg, #f59e0b, #7c3aed);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .section-subtitle {
+      font-size: 0.88rem; color: var(--muted);
+      max-width: 520px; margin: 0 auto; line-height: 1.6;
+    }
+
+    /* Leaderboard card */
+    .lb-card {
+      max-width: 860px; margin: 0 auto;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.9);
+      border-radius: 24px; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(99,102,241,0.1), 0 4px 16px rgba(0,0,0,0.05);
+    }
+    .lb-card-header {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .lb-card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.83rem; font-weight: 800;
+      color: white; display: flex; align-items: center; gap: 8px;
+    }
+    .lb-live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.25);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.25); }
+      50%       { box-shadow: 0 0 0 6px rgba(16,185,129,0.1); }
+    }
+    .lb-meta { font-size: 0.68rem; color: rgba(255,255,255,0.4); font-weight: 500; }
+
+    /* Legend pills */
+    .lb-legend {
+      display: flex; gap: 12px; align-items: center;
+      padding: 10px 24px;
+      background: rgba(99,102,241,0.04);
+      border-bottom: 1px solid rgba(99,102,241,0.07);
+      flex-wrap: wrap;
+    }
+    .lb-legend-item {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.62rem; color: #64748b; font-weight: 600;
+    }
+    .lb-legend-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+
+    /* Table */
+    .lb-table { width: 100%; border-collapse: collapse; }
+    .lb-table thead tr {
+      background: rgba(99,102,241,0.05);
+      border-bottom: 1.5px solid rgba(99,102,241,0.08);
+    }
+    .lb-table thead th {
+      padding: 11px 20px;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.6rem; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+      text-align: left;
+    }
+    .lb-table thead th.right { text-align: right; }
+    .lb-table thead th.center { text-align: center; }
+    .lb-table tbody tr {
+      border-bottom: 1px solid rgba(99,102,241,0.05);
+      transition: background 0.2s;
+    }
+    .lb-table tbody tr:hover { background: rgba(99,102,241,0.03); }
+    .lb-table tbody tr:last-child { border-bottom: none; }
+    .lb-table tbody td { padding: 13px 20px; font-size: 0.84rem; vertical-align: middle; }
+
+    /* Rank column */
+    .rank-cell { width: 52px; text-align: center; }
+    .rank-medal {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; margin: 0 auto;
+    }
+    .rank-1 { background: linear-gradient(135deg,#fbbf24,#f59e0b); box-shadow: 0 3px 10px rgba(245,158,11,0.4); }
+    .rank-2 { background: linear-gradient(135deg,#e2e8f0,#94a3b8); box-shadow: 0 3px 10px rgba(148,163,184,0.3); }
+    .rank-3 { background: linear-gradient(135deg,#fde8c8,#d97706); box-shadow: 0 3px 10px rgba(217,119,6,0.3); }
+    .rank-other {
+      font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 800;
+      color: var(--muted); background: rgba(99,102,241,0.06); border-radius: 50%;
+    }
+
+    /* Student name */
+    .lb-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem; font-weight: 700; color: var(--dark);
+    }
+    .lb-name.top { color: #6366f1; }
+    .lb-id { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+    /* Course badge */
+    .lb-course {
+      display: inline-block;
+      font-size: 0.65rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 99px;
+      background: rgba(99,102,241,0.1); color: #6366f1;
+      border: 1px solid rgba(99,102,241,0.2);
+    }
+
+    /* ── Total Points (PRIMARY rank column) ── */
+    .lb-total-cell { text-align: right; }
+    .lb-total-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem; font-weight: 800;
+      background: linear-gradient(135deg, #f59e0b, #7c3aed);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .lb-total-label {
+      font-size: 0.6rem; color: var(--muted); margin-top: 2px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    /* ── Avg Score (secondary) ── */
+    .lb-avg-cell { text-align: center; }
+    .lb-avg-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem; font-weight: 700; color: #475569;
+    }
+    .lb-avg-bar-wrap {
+      width: 60px; height: 4px; background: rgba(99,102,241,0.1);
+      border-radius: 99px; margin: 4px auto 0; overflow: hidden;
+    }
+    .lb-avg-bar {
+      height: 100%; border-radius: 99px;
+      background: linear-gradient(90deg, #f59e0b, #7c3aed);
+    }
+
+    /* Sessions rated */
+    .lb-sessions-cell { text-align: center; }
+    .lb-sessions-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem; font-weight: 700; color: #64748b;
+    }
+    .lb-sessions-lbl { font-size: 0.6rem; color: var(--muted); }
+
+    /* Empty state */
+    .lb-empty { padding: 48px 28px; text-align: center; }
+    .lb-empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .lb-empty-title {
+      font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700;
+      color: var(--dark); margin-bottom: 6px;
+    }
+    .lb-empty-sub { font-size: 0.8rem; color: var(--muted); }
+
+    .section-divider {
+      height: 1px; margin: 0 5%; width: 90%;
+      background: linear-gradient(90deg, transparent, rgba(99,102,241,0.15), transparent);
+    }
+
+    @media (max-width: 1400px) {
+      .hero { padding: 80px 5% 48px; min-height: auto; }
+      .hero-inner { gap: 36px; }
+      h1 { font-size: 2.3rem; }
+      .hero-card { padding: 24px; }
+      .stat-num { font-size: 1.55rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="/" class="logo">
+      <img src="{{ url_for('static', filename='uclogo.png') }}" alt="UC CCS Logo" class="nav-logo-img">
+      <div class="logo-text">
+        <span class="logo-title">University of Cebu</span>
+        <span class="logo-sub">CCS SIT-IN MONITORING</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/community">Community</a>
+      <a href="/about">About</a>
+      <a class="btn-ghost" href="/login">Login</a>
+      <a class="btn-solid" href="/register">Register</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="badge">CCS Lab Management</div>
+        <h1>Track Sit-In<br><span>Sessions Smartly</span></h1>
+        <p class="hero-desc">
+          A modern monitoring platform for the College of Computer Studies.
+          Manage lab usage, track attendance, and streamline student activity — all in one place.
+        </p>
+        <div class="hero-btns">
+          <a href="/login" class="primary">Get Started</a>
+          <a href="/register" class="secondary">Create Account</a>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <div class="card-title">📊 System Overview</div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-num">248</div>
+            <div class="stat-label">Students Registered</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">12</div>
+            <div class="stat-label">Active Sessions</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">3</div>
+            <div class="stat-label">Labs Available</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">99%</div>
+            <div class="stat-label">Uptime</div>
+          </div>
+        </div>
+        <ul class="feature-list">
+          <li><div class="feat-icon">🔐</div> Secure student login &amp; registration</li>
+          <li><div class="feat-icon">📋</div> Real-time sit-in tracking</li>
+          <li><div class="feat-icon">📈</div> Usage reports &amp; analytics</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- Leaderboard -->
+  <section class="leaderboard-section">
+    <div class="section-header">
+      <div class="section-tag">🏆 Hall of Fame</div>
+      <h2 class="section-title">Top <span>Performing Students</span></h2>
+      <p class="section-subtitle">
+        Ranked by <strong>total points accumulated</strong> across all sit-in sessions.
+        Each session is worth up to 3 pts — attend more, behave better, rank higher.
+      </p>
+    </div>
+
+    <div class="lb-card">
+      <div class="lb-card-header">
+        <div class="lb-card-title">
+          <div class="lb-live-dot"></div>
+          Student Leaderboard — Top 10
+        </div>
+        <div class="lb-meta">Ranked by total points · max 3 pts per session</div>
+      </div>
+
+      <!-- Scoring legend -->
+      <div class="lb-legend">
+        <div class="lb-legend-item">
+          <div class="lb-legend-dot" style="background:#f59e0b;"></div>
+          Total Points = sum of all session scores
+        </div>
+        <div class="lb-legend-item">
+          <div class="lb-legend-dot" style="background:#6366f1;"></div>
+          Avg / Session = quality indicator (0–3)
+        </div>
+        <div class="lb-legend-item">
+          <div class="lb-legend-dot" style="background:#10b981;"></div>
+          Per session: PC cleanup + chair + conduct = 3 pts max
+        </div>
+      </div>
+
+      {% if leaderboard %}
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th class="rank-cell">Rank</th>
+            <th>Student</th>
+            <th>Course</th>
+            <th>Year</th>
+            <th class="center">Sessions</th>
+            <th class="center">Avg / Session</th>
+            <th class="right">Total Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in leaderboard %}
+          <tr>
+            <!-- Rank -->
+            <td class="rank-cell">
+              {% if loop.index == 1 %}
+                <div class="rank-medal rank-1">🥇</div>
+              {% elif loop.index == 2 %}
+                <div class="rank-medal rank-2">🥈</div>
+              {% elif loop.index == 3 %}
+                <div class="rank-medal rank-3">🥉</div>
+              {% else %}
+                <div class="rank-medal rank-other">#{{ loop.index }}</div>
+              {% endif %}
+            </td>
+
+            <!-- Student -->
+            <td>
+              <div class="lb-name {% if loop.index <= 3 %}top{% endif %}">
+                {{ s.lastname }}, {{ s.firstname }}
+              </div>
+              <div class="lb-id">{{ s.student_id }}</div>
+            </td>
+
+            <!-- Course -->
+            <td><span class="lb-course">{{ s.course or 'N/A' }}</span></td>
+
+            <!-- Year -->
+            <td style="font-size:0.8rem; color:var(--muted);">{{ s.level or '—' }}</td>
+
+            <!-- Sessions Rated -->
+            <td class="lb-sessions-cell">
+              <div class="lb-sessions-val">{{ s.total_ratings }}</div>
+              <div class="lb-sessions-lbl">rated</div>
+            </td>
+
+            <!-- Avg per session -->
+            <td class="lb-avg-cell">
+              <div class="lb-avg-val">{{ s.avg_score }} / 3</div>
+              <div class="lb-avg-bar-wrap">
+                <div class="lb-avg-bar" style="width: {{ ((s.avg_score / 3) * 100) | round }}%"></div>
+              </div>
+            </td>
+
+            <!-- Total Points (PRIMARY) -->
+            <td class="lb-total-cell">
+              <div class="lb-total-val">{{ s.total_points }} pts</div>
+              <div class="lb-total-label">leaderboard score</div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="lb-empty">
+        <div class="lb-empty-icon">🏆</div>
+        <div class="lb-empty-title">No rankings yet</div>
+        <div class="lb-empty-sub">
+          Rankings appear once students complete sit-in sessions and receive admin ratings.
+          Be the first to make it to the leaderboard!
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+</body>
+</html>

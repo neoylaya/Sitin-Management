@@ -1,0 +1,543 @@
+{% extends "AdminPage/layout.html" %}
+{% block title %}Rate Student{% endblock %}
+{% block page_title %}Rate Student{% endblock %}
+{% block breadcrumb_current %}Rate Student{% endblock %}
+
+{% block extra_head %}
+<style>
+  .rate-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    max-width: 900px;
+  }
+
+  /* ── Student Card ── */
+  .student-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px;
+    background: var(--bg-card-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+  }
+  .student-card-avatar {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 800;
+    color: white; flex-shrink: 0;
+    box-shadow: 0 3px 10px rgba(99,102,241,0.3);
+  }
+  .student-card-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem; font-weight: 800; color: var(--text-1);
+    margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .student-card-meta {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  }
+
+  /* ── Rating Criteria ── */
+  .criteria-list {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .criteria-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    background: var(--bg-card-2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition);
+    user-select: none;
+    position: relative; overflow: hidden;
+  }
+  .criteria-item::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--blue), var(--violet));
+    border-radius: 0 3px 3px 0;
+    opacity: 0; transition: opacity var(--transition);
+  }
+  .criteria-item:hover {
+    border-color: var(--border-med);
+    background: rgba(99,102,241,0.04);
+    transform: translateX(3px);
+  }
+  .criteria-item:hover::before { opacity: 1; }
+  .criteria-item.checked {
+    background: rgba(16,185,129,0.06);
+    border-color: rgba(16,185,129,0.3);
+  }
+  .criteria-item.checked::before {
+    opacity: 1;
+    background: linear-gradient(180deg, var(--success), #059669);
+  }
+
+  /* Custom checkbox */
+  .criteria-checkbox {
+    width: 22px; height: 22px; border-radius: 6px;
+    border: 2px solid var(--border-med);
+    background: var(--bg-card);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all var(--transition);
+    position: relative;
+  }
+  .criteria-item.checked .criteria-checkbox {
+    background: var(--success);
+    border-color: var(--success);
+    box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+  }
+  .criteria-checkbox svg {
+    opacity: 0; transform: scale(0.5);
+    transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .criteria-item.checked .criteria-checkbox svg {
+    opacity: 1; transform: scale(1);
+  }
+
+  .criteria-icon { font-size: 1.1rem; flex-shrink: 0; }
+  .criteria-text {
+    flex: 1;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.8rem; font-weight: 700;
+    color: var(--text-2); letter-spacing: 0.3px; text-transform: uppercase;
+    transition: color var(--transition);
+  }
+  .criteria-item.checked .criteria-text { color: var(--text-1); }
+
+  .criteria-pts {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem; font-weight: 800;
+    color: var(--success); opacity: 0.5;
+    transition: opacity var(--transition);
+    white-space: nowrap;
+  }
+  .criteria-item.checked .criteria-pts { opacity: 1; }
+
+  /* ── Score Display (this session) ── */
+  .score-display {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--bg-card-2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+  }
+  .score-label {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .score-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.4rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--blue), var(--violet));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .score-sub { font-size: 0.7rem; color: var(--text-3); margin-top: 2px; }
+
+  /* ── Task Completion ── */
+  .task-section-label {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--text-3);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .task-section-label::before {
+    content: '?';
+    width: 18px; height: 18px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--violet));
+    color: white; font-size: 0.65rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .task-btns {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 20px;
+  }
+  .task-btn {
+    padding: 13px 10px;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--border);
+    background: var(--bg-card-2);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700;
+    cursor: pointer; transition: all var(--transition);
+    color: var(--text-2);
+  }
+  .task-btn:hover { transform: translateY(-2px); }
+  .task-btn.selected-yes {
+    background: rgba(16,185,129,0.08);
+    border-color: rgba(16,185,129,0.4);
+    color: var(--success);
+    box-shadow: 0 4px 14px rgba(16,185,129,0.12);
+  }
+  .task-btn.selected-no {
+    background: rgba(239,68,68,0.06);
+    border-color: rgba(239,68,68,0.3);
+    color: var(--danger);
+    box-shadow: 0 4px 14px rgba(239,68,68,0.1);
+  }
+
+  /* ── Skip btn ── */
+  .skip-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700;
+    color: var(--text-3); padding: 6px 14px; border-radius: var(--radius-md);
+    background: none; border: 1.5px solid var(--border);
+    cursor: pointer; transition: all var(--transition); text-decoration: none;
+  }
+  .skip-btn:hover { color: var(--text-2); border-color: var(--border-med); background: var(--bg-card-2); }
+
+  /* ── Right Summary Panel ── */
+  .summary-section { display: flex; flex-direction: column; gap: 12px; }
+
+  .summary-item {
+    padding: 12px 14px;
+    background: var(--bg-card-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+  .summary-item-label {
+    font-size: 0.58rem; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-3); margin-bottom: 4px;
+  }
+  .summary-item-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.86rem; font-weight: 700; color: var(--text-1);
+  }
+
+  /* ── Score Ring (this session preview) ── */
+  .score-ring-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px; gap: 8px;
+    background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(124,58,237,0.05));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+  }
+  .score-ring {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: conic-gradient(var(--indigo) 0deg, var(--bg-card-2) 0deg);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; transition: background 0.4s;
+  }
+  .score-ring::after {
+    content: ''; position: absolute; inset: 10px;
+    border-radius: 50%; background: white;
+  }
+  .score-ring-val {
+    position: relative; z-index: 1;
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem; font-weight: 800; color: var(--indigo);
+  }
+  .score-ring-label { font-size: 0.72rem; color: var(--text-3); font-weight: 500; text-align: center; }
+
+  /* ── Lifetime Stats Panel ── */
+  .lifetime-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-top: 2px;
+  }
+  .lifetime-stat {
+    padding: 12px 10px;
+    background: var(--bg-card-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    text-align: center;
+  }
+  .lifetime-stat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.15rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--blue), var(--violet));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 3px;
+  }
+  .lifetime-stat-lbl {
+    font-size: 0.58rem; font-weight: 700; letter-spacing: 0.8px;
+    text-transform: uppercase; color: var(--text-3);
+    line-height: 1.3;
+  }
+  .lifetime-stat.full-width {
+    grid-column: 1 / -1;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rate-layout">
+
+  <!-- LEFT: Rating Form -->
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <h3>Rate Student Behavior</h3>
+      </div>
+
+      <!-- Student Info -->
+      <div class="student-card">
+        <div class="student-card-avatar">
+          {{ sitin.firstname[0] }}{{ sitin.lastname[0] }}
+        </div>
+        <div>
+          <div class="student-card-name">{{ sitin.firstname }} {{ sitin.lastname }}</div>
+          <div class="student-card-meta">
+            <span class="badge badge-blue">{{ sitin.course }}</span>
+            <span class="badge badge-gold">{{ sitin.lab_room }}</span>
+            <span class="badge badge-violet">{{ sitin.purpose }}</span>
+            <span style="font-size:0.72rem; color:var(--text-3);">{{ sitin.sid }}</span>
+          </div>
+        </div>
+      </div>
+
+      <form method="POST" action="{{ url_for('admin_rate_student_submit', session_id=sitin.id) }}" id="rateForm">
+
+        <!-- Rating Section Header -->
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--gold)" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span style="font-size:0.68rem; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-2);">
+            Rate Behavior <span style="color:var(--text-3); font-weight:500;">(1 pt each · max 3 pts per session)</span>
+          </span>
+        </div>
+
+        <!-- Criteria -->
+        <div class="criteria-list">
+          <div class="criteria-item" id="item-behavior" onclick="toggleCriteria(this, 'behavior')">
+            <div class="criteria-checkbox">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <span class="criteria-icon">🖥️</span>
+            <span class="criteria-text">Arranged &amp; Cleaned PC Before Leaving</span>
+            <span class="criteria-pts">+1 PT</span>
+            <input type="hidden" name="behavior" id="behavior" value="0">
+          </div>
+
+          <div class="criteria-item" id="item-arrangement" onclick="toggleCriteria(this, 'arrangement')">
+            <div class="criteria-checkbox">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <span class="criteria-icon">🪑</span>
+            <span class="criteria-text">Chair Properly Arranged</span>
+            <span class="criteria-pts">+1 PT</span>
+            <input type="hidden" name="arrangement" id="arrangement" value="0">
+          </div>
+
+          <div class="criteria-item" id="item-cleanliness" onclick="toggleCriteria(this, 'cleanliness')">
+            <div class="criteria-checkbox">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <span class="criteria-icon">✅</span>
+            <span class="criteria-text">General Good Conduct &amp; Lab Etiquette</span>
+            <span class="criteria-pts">+1 PT</span>
+            <input type="hidden" name="cleanliness" id="cleanliness" value="0">
+          </div>
+        </div>
+
+        <!-- This-session score display -->
+        <div class="score-display">
+          <div>
+            <div class="score-label">This Session</div>
+            <div class="score-sub">Added directly to total leaderboard points</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="score-value" id="scoreDisplay">0 / 3 pts</div>
+          </div>
+        </div>
+
+        <!-- Hidden fields for unused rating columns -->
+        <input type="hidden" name="pc_usage" value="0">
+        <input type="hidden" name="shutdown" value="0">
+
+        <!-- Task Completion -->
+        <div class="task-section-label">Did the student complete their task?</div>
+        <div class="task-btns">
+          <div class="task-btn" id="btn-yes" onclick="selectTask('yes')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Yes, completed
+          </div>
+          <div class="task-btn selected-no" id="btn-no" onclick="selectTask('no')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Not confirmed
+          </div>
+        </div>
+        <input type="hidden" name="remarks" id="remarksInput" value="Task not confirmed.">
+
+        <!-- Optional Remarks -->
+        <div class="form-group">
+          <label class="form-label">Additional Remarks <span style="font-weight:400;text-transform:none;letter-spacing:0; color:var(--text-3);">(optional)</span></label>
+          <textarea class="form-textarea" id="remarksTextarea" placeholder="Any additional notes about this student's session..."
+            style="min-height:72px;"
+            oninput="updateRemarks()"></textarea>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px; flex-wrap:wrap; gap:10px;">
+          <a href="{{ url_for('admin_current_sitin') }}" class="skip-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+            Skip Rating
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Submit Rating
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- RIGHT: Summary Panel -->
+  <div>
+
+    <!-- This Session Score Ring -->
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <h3>Session Score</h3>
+      </div>
+      <div class="score-ring-wrap">
+        <div class="score-ring" id="scoreRing">
+          <span class="score-ring-val" id="scoreRingVal">0</span>
+        </div>
+        <div class="score-ring-label">out of 3 pts this session</div>
+      </div>
+    </div>
+
+    <!-- Lifetime Stats -->
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-header">
+        <div class="panel-icon">🏆</div>
+        <h3>Leaderboard Stats</h3>
+      </div>
+
+      {% if score_summary and score_summary.total_ratings > 0 %}
+      <div class="lifetime-stats">
+        <div class="lifetime-stat">
+          <div class="lifetime-stat-val">{{ score_summary.total_points }}</div>
+          <div class="lifetime-stat-lbl">Total Points<br>(Leaderboard)</div>
+        </div>
+        <div class="lifetime-stat">
+          <div class="lifetime-stat-val">{{ score_summary.avg_score }}/3</div>
+          <div class="lifetime-stat-lbl">Avg Per<br>Session</div>
+        </div>
+        <div class="lifetime-stat full-width">
+          <div class="lifetime-stat-val">{{ score_summary.total_ratings }}</div>
+          <div class="lifetime-stat-lbl">Sessions Rated</div>
+        </div>
+      </div>
+      <div style="margin-top:10px; padding:10px 12px; background:rgba(99,102,241,0.05); border:1px solid var(--border); border-radius:var(--radius-md); font-size:0.7rem; color:var(--text-3); line-height:1.6;">
+        After submitting, this student's total will become
+        <strong style="color:var(--indigo);" id="projectedTotal">{{ score_summary.total_points }}</strong> pts
+        <span style="font-size:0.65rem;">({{ score_summary.total_ratings + 1 }} sessions rated)</span>
+      </div>
+      {% else %}
+      <div style="padding:14px; text-align:center;">
+        <div style="font-size:1.5rem; margin-bottom:8px;">🎯</div>
+        <div style="font-family:'Syne',sans-serif; font-size:0.78rem; font-weight:700; color:var(--text-2); margin-bottom:4px;">First Rating!</div>
+        <div style="font-size:0.72rem; color:var(--text-3);">This will be their first entry on the leaderboard.</div>
+      </div>
+      {% endif %}
+
+      <div style="margin-top:12px; padding:10px 12px; background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.15); border-radius:var(--radius-md); font-size:0.68rem; color:var(--text-3); line-height:1.6;">
+        💡 <strong style="color:var(--success);">How ranking works:</strong>
+        Students are ranked by <strong>total points accumulated</strong> across all sessions.
+        Perfect behavior (3/3) every session = highest possible score.
+        Ties broken by average per session.
+      </div>
+    </div>
+
+    <!-- Session Info -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Session Info</h3>
+      </div>
+      <div class="summary-section">
+        <div class="summary-item">
+          <div class="summary-item-label">Student ID</div>
+          <div class="summary-item-value">{{ sitin.sid }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-label">Lab Room</div>
+          <div class="summary-item-value">{{ sitin.lab_room }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-label">Purpose</div>
+          <div class="summary-item-value">{{ sitin.purpose }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-label">Time In</div>
+          <div class="summary-item-value" style="font-size:0.78rem;">{{ sitin.time_in }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-item-label">Time Out</div>
+          <div class="summary-item-value" style="font-size:0.78rem;">{{ sitin.time_out or 'Just now' }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Current lifetime total passed from Flask
+  const currentTotal = {{ score_summary.total_points if score_summary else 0 }};
+  let score = 0;
+  let taskValue = 'not_confirmed';
+
+  function toggleCriteria(el, field) {
+    el.classList.toggle('checked');
+    const isChecked = el.classList.contains('checked');
+    document.getElementById(field).value = isChecked ? 1 : 0;
+    updateScore();
+  }
+
+  function updateScore() {
+    score = ['behavior','arrangement','cleanliness'].reduce((sum, f) => {
+      return sum + parseInt(document.getElementById(f).value || 0);
+    }, 0);
+
+    // This-session display
+    document.getElementById('scoreDisplay').textContent = score + ' / 3 pts';
+    document.getElementById('scoreRingVal').textContent = score;
+
+    // Animated conic ring
+    const deg   = (score / 3) * 360;
+    const color = score === 3 ? 'var(--success)' : score >= 1 ? 'var(--indigo)' : 'var(--bg-card-2)';
+    document.getElementById('scoreRing').style.background =
+      `conic-gradient(${color} ${deg}deg, var(--bg-card-2) ${deg}deg)`;
+
+    // Projected total
+    const projEl = document.getElementById('projectedTotal');
+    if (projEl) projEl.textContent = currentTotal + score;
+  }
+
+  function selectTask(val) {
+    taskValue = val;
+    const btnYes = document.getElementById('btn-yes');
+    const btnNo  = document.getElementById('btn-no');
+    btnYes.className = 'task-btn' + (val === 'yes' ? ' selected-yes' : '');
+    btnNo.className  = 'task-btn' + (val === 'no'  ? ' selected-no'  : '');
+    updateRemarks();
+  }
+
+  function updateRemarks() {
+    const extra   = document.getElementById('remarksTextarea').value.trim();
+    const taskStr = taskValue === 'yes' ? 'Task completed.' : 'Task not confirmed.';
+    document.getElementById('remarksInput').value = extra ? `${taskStr} ${extra}` : taskStr;
+  }
+</script>
+{% endblock %}

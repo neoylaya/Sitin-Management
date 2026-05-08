@@ -1,0 +1,117 @@
+{% extends "AdminPage/layout.html" %}
+{% block title %}Search{% endblock %}
+{% block page_title %}Search Student{% endblock %}
+{% block breadcrumb_current %}Search{% endblock %}
+
+{% block content %}
+
+<!-- Search modal always open by default -->
+{% if not searched or (searched and not student) %}
+<div class="modal-overlay open">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="panel-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <h3>Search Student</h3>
+    </div>
+    {% if searched and not student %}
+    <div class="flash flash-error" style="margin-bottom:16px;">No student found for "<strong>{{ query }}</strong>". Try again.</div>
+    {% endif %}
+    <form method="POST" action="{{ url_for('admin_search') }}">
+      <div class="form-group">
+        <label class="form-label">ID Number or Name</label>
+        <div class="search-input-wrap" style="max-width:100%;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" name="query" class="search-input" placeholder="Enter ID number or student name..." value="{{ query or '' }}" autofocus required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a href="{{ url_for('admin_home') }}" class="btn btn-danger btn-sm">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Search
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Sit-In modal shown after student found -->
+{% if searched and student %}
+<div class="modal-overlay open">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="panel-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      </div>
+      <h3>Sit-In Form</h3>
+      <a href="{{ url_for('admin_search') }}" class="modal-close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </a>
+    </div>
+
+    <div class="student-preview">
+      <div class="preview-item">
+        <div class="preview-label">ID Number</div>
+        <div class="preview-value highlight">{{ student.student_id }}</div>
+      </div>
+      <div class="preview-item">
+        <div class="preview-label">Student Name</div>
+        <div class="preview-value">{{ student.firstname }} {{ student.lastname }}</div>
+      </div>
+      <div class="preview-item">
+        <div class="preview-label">Remaining Sessions</div>
+        <div class="preview-value highlight">{{ student.sessions_left }}</div>
+      </div>
+      <div class="preview-item">
+        <div class="preview-label">Course</div>
+        <div class="preview-value">{{ student.course }}</div>
+      </div>
+    </div>
+
+    {% if student.sessions_left <= 0 %}
+      <div class="flash flash-error">This student has no remaining sessions.</div>
+      <div class="modal-footer">
+        <a href="{{ url_for('admin_search') }}" class="btn btn-danger btn-sm">Close</a>
+      </div>
+    {% else %}
+      <form method="POST" action="{{ url_for('admin_sitin_submit') }}">
+        <input type="hidden" name="student_id" value="{{ student.student_id }}">
+        <div class="form-group">
+          <label class="form-label">Purpose / Reason <span style="color:var(--danger)">*</span></label>
+          <select name="purpose" class="form-input" required>
+            <option value="" disabled selected>Select purpose...</option>
+            <option value="C Programming">C Programming</option>
+            <option value="Java Programming">Java Programming</option>
+            <option value="Python Programming">Python Programming</option>
+            <option value="Web Development">Web Development</option>
+            <option value="Database">Database</option>
+            <option value="Research / Study">Research / Study</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Laboratory Room <span style="color:var(--danger)">*</span></label>
+          <select name="lab_room" class="form-input" required>
+            <option value="" disabled selected>Select lab...</option>
+            <option value="Lab 524">Lab 524</option>
+            <option value="Lab 526">Lab 526</option>
+            <option value="Lab 528">Lab 528</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <a href="{{ url_for('admin_search') }}" class="btn btn-danger btn-sm">Cancel</a>
+          <button type="submit" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Sit In
+          </button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

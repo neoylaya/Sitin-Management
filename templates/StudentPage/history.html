@@ -1,0 +1,679 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CCS | History</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <style>
+    /* ── Page layout ── */
+    .history-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .history-layout { grid-template-columns: 1fr; } }
+
+    /* ── Student sidebar ── */
+    .student-sidebar { display: flex; flex-direction: column; gap: 0; }
+
+    .sidebar-profile {
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 20px 16px 16px;
+      border-bottom: 1.5px solid var(--border);
+    }
+
+    .sidebar-pic-wrap {
+      width: 82px; height: 82px; border-radius: 50%; overflow: hidden;
+      border: 2.5px solid transparent;
+      background: linear-gradient(white,white) padding-box,
+                  linear-gradient(135deg,var(--blue),var(--violet)) border-box;
+      margin-bottom: 11px;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.18);
+      cursor: pointer;
+    }
+    .sidebar-pic        { width:100%; height:100%; object-fit:cover; }
+    .sidebar-initials   {
+      width:100%; height:100%;
+      background: linear-gradient(135deg,var(--blue),var(--violet));
+      display:flex; align-items:center; justify-content:center;
+      font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:800; color:white;
+    }
+
+    .sidebar-name {
+      font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:800;
+      color:var(--text-1); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:7px;
+    }
+    .sidebar-course-badge {
+      display:inline-flex;
+      background:linear-gradient(135deg,var(--blue),var(--violet));
+      color:white; font-size:0.64rem; font-weight:700;
+      padding:3px 13px; border-radius:99px; letter-spacing:0.5px;
+      box-shadow:0 3px 10px rgba(99,102,241,0.3);
+    }
+
+    .sidebar-info-list { padding: 14px 16px; display:flex; flex-direction:column; gap:8px; }
+
+    .sidebar-info-item {
+      display:flex; align-items:flex-start; gap:9px;
+      padding:7px 10px; border-radius:var(--radius-md);
+      background:var(--bg-card-2); border:1px solid transparent;
+      transition:all var(--transition);
+    }
+    .sidebar-info-item:hover { background:rgba(99,102,241,0.05); border-color:var(--border); }
+    .sii-icon  { width:13px; height:13px; color:var(--indigo); flex-shrink:0; margin-top:3px; }
+    .sii-label { font-size:0.56rem; font-weight:700; letter-spacing:1.1px; text-transform:uppercase; color:var(--text-3); margin-bottom:2px; }
+    .sii-value { font-size:0.8rem; font-weight:500; color:var(--text-1); word-break:break-all; }
+
+    .sessions-remaining-bar {
+      margin:0 16px 16px;
+      padding:11px 14px;
+      background:linear-gradient(135deg,rgba(59,130,246,0.07),rgba(124,58,237,0.07));
+      border:1.5px solid rgba(99,102,241,0.15);
+      border-radius:var(--radius-md);
+    }
+    .srb-top  { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
+    .srb-label { font-size:0.6rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-3); }
+    .srb-val   { font-family:'Syne',sans-serif; font-size:0.82rem; font-weight:800; color:var(--indigo); }
+    .srb-track { height:5px; background:var(--border); border-radius:99px; overflow:hidden; }
+    .srb-fill  { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--blue),var(--violet)); transition:width 0.6s ease; }
+
+    /* ── Summary stats ── */
+    .summary-grid {
+      display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;
+    }
+    @media(max-width:1100px) { .summary-grid { grid-template-columns:repeat(2,1fr); } }
+
+    .summary-card {
+      background:var(--bg-card);
+      border:1px solid rgba(255,255,255,0.9);
+      border-radius:var(--radius-xl); padding:16px 18px;
+      box-shadow:var(--shadow-md);
+      display:flex; align-items:center; gap:12px;
+      transition:all var(--transition); position:relative; overflow:hidden;
+    }
+    .summary-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      border-radius:0;
+    }
+    .summary-card.s-blue::before   { background:linear-gradient(90deg,var(--blue),#60a5fa); }
+    .summary-card.s-violet::before { background:linear-gradient(90deg,var(--indigo),var(--violet)); }
+    .summary-card.s-green::before  { background:linear-gradient(90deg,var(--success),#34d399); }
+    .summary-card.s-gold::before   { background:linear-gradient(90deg,var(--gold),#fbbf24); }
+    .summary-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+
+    .sc-icon { width:40px; height:40px; border-radius:var(--radius-md); flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+    .sc-icon.blue   { background:rgba(59,130,246,0.1);  color:var(--blue); }
+    .sc-icon.violet { background:rgba(99,102,241,0.1);  color:var(--indigo); }
+    .sc-icon.green  { background:rgba(16,185,129,0.1);  color:var(--success); }
+    .sc-icon.gold   { background:rgba(245,158,11,0.1);  color:var(--gold); }
+
+    .sc-val { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; color:var(--text-1); line-height:1; margin-bottom:3px; }
+    .sc-unit { font-size:0.72rem; font-weight:600; color:var(--text-3); }
+    .sc-lbl  { font-size:0.62rem; color:var(--text-3); font-weight:500; text-transform:uppercase; letter-spacing:0.5px; }
+    .sc-sub  { font-size:0.62rem; color:var(--text-3); margin-top:2px; }
+
+    /* ── Table ── */
+    .history-table { width:100%; border-collapse:collapse; }
+    .history-table thead tr { background:linear-gradient(135deg,#1e293b,#0f172a); }
+    .history-table thead th {
+      padding:11px 14px; text-align:left;
+      font-family:'Syne',sans-serif; font-size:0.65rem; font-weight:700;
+      color:rgba(255,255,255,0.7); letter-spacing:0.8px; text-transform:uppercase;
+    }
+    .history-table thead th:first-child { border-radius:var(--radius-md) 0 0 var(--radius-md); }
+    .history-table thead th:last-child  { border-radius:0 var(--radius-md) var(--radius-md) 0; }
+    .history-table tbody tr { border-bottom:1px solid rgba(99,102,241,0.06); transition:background var(--transition); }
+    .history-table tbody tr:hover { background:rgba(99,102,241,0.03); }
+    .history-table tbody tr:last-child { border-bottom:none; }
+    .history-table tbody td { padding:11px 14px; font-size:0.82rem; color:var(--text-1); vertical-align:middle; }
+
+    .dur-pill {
+      display:inline-flex; align-items:center; gap:4px;
+      font-family:'Syne',sans-serif; font-size:0.65rem; font-weight:800;
+      padding:2px 9px; border-radius:99px;
+      background:rgba(59,130,246,0.1); color:var(--blue);
+      border:1px solid rgba(59,130,246,0.2);
+    }
+
+    /* Feedback button */
+    .btn-fb {
+      display:inline-flex; align-items:center; gap:4px;
+      font-family:'Syne',sans-serif; font-size:0.66rem; font-weight:700;
+      padding:4px 10px; border-radius:9px; cursor:pointer;
+      background:rgba(16,185,129,0.1); color:var(--success);
+      border:1px solid rgba(16,185,129,0.25); transition:all var(--transition);
+    }
+    .btn-fb:hover { background:rgba(16,185,129,0.18); transform:translateY(-1px); }
+    .btn-fb.sent {
+      background:rgba(99,102,241,0.08); color:var(--indigo);
+      border-color:rgba(99,102,241,0.2); cursor:default;
+    }
+    .btn-fb.sent:hover { transform:none; }
+
+    /* Admin rating stars shown in table */
+    .admin-rating { display:flex; align-items:center; gap:4px; font-size:0.72rem; }
+    .rating-stars { color:var(--gold); letter-spacing:1px; }
+    .rating-pts   { font-family:'Syne',sans-serif; font-weight:800; color:var(--text-2); font-size:0.7rem; }
+
+    /* Student's own rating stars (in modal) */
+    .star-rating-row { display:flex; align-items:center; gap:6px; margin-bottom:14px; }
+    .star-rating-label { font-size:0.62rem; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-3); }
+    .star-btn {
+      background:none; border:none; cursor:pointer; padding:0;
+      font-size:1.4rem; color:#d1d5db; transition:color 0.15s, transform 0.1s;
+      line-height:1;
+    }
+    .star-btn:hover, .star-btn.active { color:var(--gold); transform:scale(1.15); }
+
+    /* Search toolbar */
+    .hist-toolbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+    .search-wrap { position:relative; max-width:280px; }
+    .search-wrap svg { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--text-3); pointer-events:none; }
+    .search-wrap input {
+      width:100%; padding:8px 13px 8px 34px;
+      background:var(--bg-card-2); border:1.5px solid var(--border);
+      border-radius:var(--radius-md); font-family:'DM Sans',sans-serif;
+      font-size:0.82rem; color:var(--text-1); outline:none; transition:all var(--transition);
+    }
+    .search-wrap input:focus { border-color:var(--indigo); background:white; box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
+
+    /* Feedback modal */
+    .fb-overlay {
+      position:fixed; inset:0; z-index:9999;
+      background:rgba(15,23,42,0.6);
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none;
+      transition:opacity 0.22s cubic-bezier(0.4,0,0.2,1); padding:16px;
+    }
+    .fb-overlay.open { opacity:1; pointer-events:all; }
+    .fb-modal {
+      background:#fff; border-radius:var(--radius-xl); padding:26px;
+      width:100%; max-width:440px;
+      box-shadow:0 25px 80px rgba(0,0,0,0.25);
+      border:1px solid rgba(255,255,255,0.9);
+      transform:translateY(16px) scale(0.97);
+      transition:transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+      max-height: 92vh; overflow-y: auto;
+    }
+    .fb-overlay.open .fb-modal { transform:translateY(0) scale(1); }
+    .fb-header { display:flex; align-items:center; gap:10px; margin-bottom:18px; padding-bottom:12px; border-bottom:1.5px solid var(--border); }
+    .fb-header h3 { font-family:'Syne',sans-serif; font-size:0.94rem; font-weight:800; color:var(--text-1); flex:1; }
+    .fb-icon { width:30px; height:30px; border-radius:var(--radius-sm); background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(124,58,237,0.1)); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--indigo); flex-shrink:0; }
+    .fb-close { background:none; border:none; cursor:pointer; color:var(--text-3); padding:4px; border-radius:6px; line-height:0; transition:all var(--transition); }
+    .fb-close:hover { color:var(--text-1); background:var(--bg-card-2); }
+    .fb-session-info { background:var(--bg-card-2); border:1px solid var(--border); border-radius:var(--radius-md); padding:11px 13px; margin-bottom:14px; display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .fb-info-label { font-size:0.56rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-3); margin-bottom:2px; }
+    .fb-info-value { font-family:'Syne',sans-serif; font-size:0.8rem; font-weight:700; color:var(--text-1); }
+    .fb-label { display:block; font-size:0.6rem; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-3); margin-bottom:6px; }
+    .fb-textarea { width:100%; padding:9px 12px; background:var(--bg-card-2); border:1.5px solid var(--border); border-radius:var(--radius-md); font-family:'DM Sans',sans-serif; font-size:0.82rem; color:var(--text-1); outline:none; resize:vertical; min-height:90px; line-height:1.6; transition:all var(--transition); }
+    .fb-textarea:focus { border-color:var(--indigo); background:white; box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
+    .fb-footer { display:flex; gap:9px; justify-content:flex-end; margin-top:16px; padding-top:13px; border-top:1.5px solid var(--border); }
+    .fb-btn-cancel { font-family:'Syne',sans-serif; font-size:0.76rem; font-weight:700; padding:6px 14px; border-radius:var(--radius-md); cursor:pointer; background:rgba(239,68,68,0.08); color:var(--danger); border:1px solid rgba(239,68,68,0.2); transition:all var(--transition); }
+    .fb-btn-cancel:hover { background:rgba(239,68,68,0.15); }
+    .fb-btn-submit { font-family:'Syne',sans-serif; font-size:0.76rem; font-weight:700; padding:6px 16px; border-radius:var(--radius-md); cursor:pointer; background:linear-gradient(135deg,var(--blue),var(--violet)); color:white; border:none; box-shadow:0 4px 14px rgba(99,102,241,0.3); transition:all var(--transition); display:flex; align-items:center; gap:5px; }
+    .fb-btn-submit:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(99,102,241,0.4); }
+
+    .badge-gray { background:rgba(148,163,184,0.12); color:#94a3b8; border:1px solid rgba(148,163,184,0.2); }
+
+    /* Empty state */
+    .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; text-align:center; gap:10px; }
+    .empty-icon  { width:68px; height:68px; border-radius:50%; background:rgba(99,102,241,0.06); border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; margin-bottom:6px; }
+    .empty-state p    { font-family:'Syne',sans-serif; font-size:0.92rem; font-weight:700; color:var(--text-2); }
+    .empty-state span { font-size:0.78rem; color:var(--text-3); }
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-left">
+      <div class="nav-brand">
+        <img src="{{ url_for('static', filename='uclogo.png') }}" alt="UC" class="brand-logo">
+        <div class="brand-text">
+          <span class="brand-title">CCS SitIn</span>
+          <span class="brand-sub">MONITORING SYSTEM</span>
+        </div>
+      </div>
+      <div class="nav-tabs">
+        <a href="/dashboard" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="/edit_profile" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Edit Profile
+        </a>
+        <a href="/history" class="nav-tab active">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          History
+        </a>
+        <a href="/reservation" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Reservation
+        </a>
+        <a href="/student/lab-software" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Lab Software
+        </a>
+      </div>
+    </div>
+    <div class="topnav-right">
+      <div class="nav-user">
+        <div class="nav-avatar" id="nav-avatar">{{ student.firstname[0] }}{{ student.lastname[0] }}</div>
+        <span class="nav-username">{{ student.lastname }}</span>
+      </div>
+      <a href="/logout" class="btn-logout">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="breadcrumb">
+      <span class="bc-title">Sit-In History</span>
+      <div class="bc-path"><span>CCS SitIn</span><span class="bc-sep">›</span><span>History</span></div>
+    </div>
+
+    <div class="section-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat,msg in messages %}
+          <div class="flash flash-{{ cat }}">{{ msg }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <div class="history-layout">
+
+        <!-- ══ LEFT SIDEBAR ══ -->
+        <div class="panel student-sidebar" style="padding:0;">
+          <div class="sidebar-profile">
+            <div class="sidebar-pic-wrap">
+              <div class="sidebar-initials" id="sidebar-initials">
+                {{ student.firstname[0] }}{{ student.lastname[0] }}
+              </div>
+            </div>
+            <div class="sidebar-name">{{ student.firstname }} {{ student.lastname }}</div>
+            <span class="sidebar-course-badge">{{ student.course or 'N/A' }}</span>
+          </div>
+
+          <div class="sidebar-info-list">
+            <div class="sidebar-info-item">
+              <svg class="sii-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <div><div class="sii-label">ID Number</div><div class="sii-value">{{ student.student_id }}</div></div>
+            </div>
+            <div class="sidebar-info-item">
+              <svg class="sii-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+              <div><div class="sii-label">Course</div><div class="sii-value">{{ student.course or '—' }}</div></div>
+            </div>
+            <div class="sidebar-info-item">
+              <svg class="sii-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <div><div class="sii-label">Year Level</div><div class="sii-value">{{ student.level or '—' }}</div></div>
+            </div>
+            <div class="sidebar-info-item">
+              <svg class="sii-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <div><div class="sii-label">Email</div><div class="sii-value">{{ student.email or '—' }}</div></div>
+            </div>
+            {% if student.address %}
+            <div class="sidebar-info-item">
+              <svg class="sii-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <div><div class="sii-label">Address</div><div class="sii-value">{{ student.address }}</div></div>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="sessions-remaining-bar">
+            <div class="srb-top">
+              <span class="srb-label">Sessions Remaining</span>
+              <span class="srb-val">{{ stats.sessions_left }} of 30</span>
+            </div>
+            <div class="srb-track">
+              <div class="srb-fill" style="width:{{ [stats.sessions_left / 30 * 100, 100]|min|round }}%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ RIGHT MAIN ══ -->
+        <div>
+          <!-- Summary Cards -->
+          <div class="summary-grid">
+            <div class="summary-card s-blue">
+              <div class="sc-icon blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div>
+                <div class="sc-val">{{ stats.total_hours }}<span class="sc-unit"> hrs</span></div>
+                <div class="sc-lbl">Total Sit-In Hours</div>
+                <div class="sc-sub">{{ stats.total_minutes }} minutes total</div>
+              </div>
+            </div>
+            <div class="summary-card s-violet">
+              <div class="sc-icon violet">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div>
+                <div class="sc-val">{{ stats.total_sessions }}<span class="sc-unit"> sessions</span></div>
+                <div class="sc-lbl">Total Sessions</div>
+                <div class="sc-sub">{{ stats.completed }} completed · {{ stats.active }} active</div>
+              </div>
+            </div>
+            <div class="summary-card s-green">
+              <div class="sc-icon green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div>
+                <div class="sc-val">{{ stats.avg_duration }}<span class="sc-unit"> min</span></div>
+                <div class="sc-lbl">Avg Session Duration</div>
+                <div class="sc-sub">Per completed session</div>
+              </div>
+            </div>
+            <div class="summary-card s-gold">
+              <div class="sc-icon gold">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div>
+                <div class="sc-val">{{ stats.longest }}<span class="sc-unit"> min</span></div>
+                <div class="sc-lbl">Longest Session</div>
+                <div class="sc-sub">Personal best record</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sessions Table -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <h3>My Sit-In Sessions</h3>
+              <span style="font-size:0.64rem;color:var(--text-3);margin-left:8px;">Complete history of your laboratory sessions</span>
+              {% if records %}
+              <span class="badge badge-violet" style="margin-left:auto;">{{ records|length }} record{{ 's' if records|length != 1 else '' }}</span>
+              {% endif %}
+            </div>
+
+            {% if records %}
+            <div class="hist-toolbar">
+              <div class="search-wrap">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="histSearch" placeholder="Search records…" oninput="filterHistory()">
+              </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+              <table class="history-table" id="histTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Purpose</th>
+                    <th>Lab Room</th>
+                    <th>Date</th>
+                    <th>Time In</th>
+                    <th>Time Out</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Feedback</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in records %}
+                  {% set date_val     = r.time_in.split(' ')[0] if r.time_in and ' ' in r.time_in else (r.time_in or '—') %}
+                  {% set time_in_val  = r.time_in.split(' ')[1] if r.time_in and ' ' in r.time_in else '—' %}
+                  {% set time_out_val = r.time_out.split(' ')[1] if r.time_out and ' ' in r.time_out else '—' %}
+                  {% set dur = durations.get(r.id, 0) %}
+                  <tr>
+                    <td style="color:var(--text-3);font-size:0.75rem;">{{ loop.index }}</td>
+                    <td><span class="badge badge-violet">{{ r.purpose }}</span></td>
+                    <td><span class="badge badge-gold">{{ r.lab_room }}</span></td>
+                    <td style="color:var(--text-2);font-size:0.78rem;white-space:nowrap;">{{ date_val }}</td>
+                    <td style="color:var(--text-2);font-size:0.78rem;white-space:nowrap;">{{ time_in_val }}</td>
+                    <td style="color:var(--text-2);font-size:0.78rem;white-space:nowrap;">{{ time_out_val }}</td>
+                    <td>
+                      {% if dur > 0 %}
+                        <span class="dur-pill">
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                          {% if dur >= 60 %}{{ dur // 60 }}h {{ dur % 60 }}m{% else %}{{ dur }}m{% endif %}
+                        </span>
+                      {% else %}
+                        <span style="color:var(--text-3);font-size:0.72rem;">—</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if r.status == 'active' %}
+                        <span class="badge badge-green">● Active</span>
+                      {% else %}
+                        <span class="badge badge-gray">✓ Done</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if r.status == 'done' %}
+                        {% set fb = feedback_map.get(r.id) %}
+                        {% if fb %}
+                          <!-- Already submitted: show rating -->
+                          <div class="admin-rating">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="var(--success)" stroke="none"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span class="rating-stars">
+                              {% for i in range(1, 6) %}{{ '★' if i <= fb.rating else '☆' }}{% endfor %}
+                            </span>
+                            <span class="rating-pts">Sent</span>
+                          </div>
+                        {% else %}
+                          <button class="btn-fb"
+                            onclick="openFeedback('{{ r.id }}', '{{ r.lab_room }}', '{{ r.purpose }}', '{{ date_val }}')">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            Feedback
+                          </button>
+                        {% endif %}
+                        <!-- Admin rating of student (if exists) -->
+                        {% set admin_score = ratings.get(r.id, 0) %}
+                        {% if admin_score > 0 %}
+                        <div style="margin-top:4px; font-size:0.6rem; color:var(--text-3);">
+                          Admin: <span style="color:var(--gold);">{{ '★' * admin_score }}{{ '☆' * (3 - admin_score) }}</span> {{ admin_score }}/3
+                        </div>
+                        {% endif %}
+                      {% else %}
+                        <span style="font-size:0.7rem;color:var(--text-3);">—</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            {% else %}
+            <div class="empty-state">
+              <div class="empty-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <p>No sit-in sessions yet.</p>
+              <span>Your logged sessions will appear here.</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FEEDBACK + RATING MODAL ══ -->
+  <div class="fb-overlay" id="fbOverlay" onclick="if(event.target===this)closeFeedback()">
+    <div class="fb-modal">
+      <div class="fb-header">
+        <div class="fb-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>Rate & Submit Feedback</h3>
+        <button class="fb-close" onclick="closeFeedback()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Session info -->
+      <div class="fb-session-info">
+        <div><div class="fb-info-label">Laboratory</div><div class="fb-info-value" id="fbLabDisplay">—</div></div>
+        <div><div class="fb-info-label">Purpose</div><div class="fb-info-value" id="fbPurposeDisplay">—</div></div>
+        <div style="grid-column:1/-1;"><div class="fb-info-label">Session Date</div><div class="fb-info-value" id="fbDateDisplay">—</div></div>
+      </div>
+
+      <form method="POST" action="/submit_feedback" id="fbForm" onsubmit="return validateFeedback()">
+        <input type="hidden" name="lab_room"   id="fbLabInput">
+        <input type="hidden" name="session_id" id="fbSessionId">
+        <input type="hidden" name="rating"     id="fbRatingInput" value="0">
+
+        <!-- ★ Star Rating -->
+        <div style="margin-bottom:14px; padding:12px 14px; background:var(--bg-card-2); border:1.5px solid var(--border); border-radius:var(--radius-md);">
+          <div class="fb-label" style="margin-bottom:8px;">Rate your session experience <span style="color:var(--danger)">*</span></div>
+          <div style="display:flex; align-items:center; gap:4px;" id="starRow">
+            <button type="button" class="star-btn" data-val="1" onclick="setRating(1)">★</button>
+            <button type="button" class="star-btn" data-val="2" onclick="setRating(2)">★</button>
+            <button type="button" class="star-btn" data-val="3" onclick="setRating(3)">★</button>
+            <button type="button" class="star-btn" data-val="4" onclick="setRating(4)">★</button>
+            <button type="button" class="star-btn" data-val="5" onclick="setRating(5)">★</button>
+          </div>
+          <div id="ratingLabel" style="font-size:0.7rem; color:var(--text-3); margin-top:6px;">Click a star to rate</div>
+        </div>
+
+        <!-- Message -->
+        <label class="fb-label">Your Message <span style="color:var(--danger)">*</span></label>
+        <textarea name="message" id="fbMessage" class="fb-textarea"
+          placeholder="Share your experience, suggestions, or any concerns about this session…"
+          required></textarea>
+
+        <div class="fb-footer">
+          <button type="button" class="fb-btn-cancel" onclick="closeFeedback()">Cancel</button>
+          <button type="submit" class="fb-btn-submit">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Submit Feedback
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ── Profile photo ──────────────────────────────────────────────────────────
+    window.addEventListener('load', function() {
+      const saved = localStorage.getItem("profile_pic_{{ student.student_id }}");
+      if (saved) {
+        ['nav-avatar','sidebar-initials'].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.style.backgroundImage    = `url(${saved})`;
+          el.style.backgroundSize     = 'cover';
+          el.style.backgroundPosition = 'center';
+          el.textContent = '';
+        });
+      }
+    });
+
+    // ── Table search ───────────────────────────────────────────────────────────
+    function filterHistory() {
+      const q = document.getElementById('histSearch').value.toLowerCase();
+      document.querySelectorAll('#histTable tbody tr').forEach(r => {
+        r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }
+
+    // ── Feedback modal ─────────────────────────────────────────────────────────
+    let currentRating = 0;
+
+    function openFeedback(sessionId, lab, purpose, date) {
+      currentRating = 0;
+      document.getElementById('fbSessionId').value        = sessionId;
+      document.getElementById('fbLabInput').value         = lab;
+      document.getElementById('fbRatingInput').value      = '0';
+      document.getElementById('fbLabDisplay').textContent     = lab;
+      document.getElementById('fbPurposeDisplay').textContent = purpose;
+      document.getElementById('fbDateDisplay').textContent    = date;
+      document.getElementById('fbMessage').value = '';
+      document.getElementById('fbMessage').style.borderColor = '';
+      document.getElementById('fbMessage').style.boxShadow   = '';
+      document.getElementById('ratingLabel').textContent = 'Click a star to rate';
+      document.getElementById('ratingLabel').style.color = 'var(--text-3)';
+      updateStars(0);
+      const old = document.getElementById('censor-notice');
+      if (old) old.remove();
+      document.getElementById('fbOverlay').classList.add('open');
+    }
+
+    function closeFeedback() {
+      document.getElementById('fbOverlay').classList.remove('open');
+    }
+
+    function setRating(val) {
+      currentRating = val;
+      document.getElementById('fbRatingInput').value = val;
+      updateStars(val);
+      const labels = ['','Poor','Fair','Good','Very Good','Excellent'];
+      const lbl = document.getElementById('ratingLabel');
+      lbl.textContent = `${val} star${val > 1 ? 's' : ''} — ${labels[val]}`;
+      lbl.style.color = 'var(--gold)';
+    }
+
+    function updateStars(val) {
+      document.querySelectorAll('.star-btn').forEach(btn => {
+        btn.style.color = parseInt(btn.dataset.val) <= val ? 'var(--gold)' : '#d1d5db';
+      });
+    }
+
+    // Hover preview
+    document.querySelectorAll('.star-btn').forEach(btn => {
+      btn.addEventListener('mouseenter', () => updateStars(parseInt(btn.dataset.val)));
+      btn.addEventListener('mouseleave', () => updateStars(currentRating));
+    });
+
+    // ── Validation (rating required + profanity filter) ────────────────────────
+    function validateFeedback() {
+      // Rating required
+      if (currentRating === 0) {
+        const lbl = document.getElementById('ratingLabel');
+        lbl.textContent = '⚠ Please select a star rating before submitting.';
+        lbl.style.color = 'var(--danger)';
+        return false;
+      }
+
+      const textarea = document.getElementById('fbMessage');
+      const text     = textarea.value.trim();
+      if (!text) return true;
+
+      // Profanity filter
+      const found = BAD_WORDS.some(word => {
+        const esc = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp('(?<![\\w])' + esc + '(?![\\w])', 'gi').test(text);
+      });
+
+      if (found) {
+        const old = document.getElementById('censor-notice');
+        if (old) old.remove();
+        const notice = document.createElement('div');
+        notice.id = 'censor-notice';
+        notice.style.cssText = 'font-size:0.76rem;color:#ef4444;font-weight:600;margin-top:8px;padding:9px 12px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25);border-radius:10px;display:flex;align-items:flex-start;gap:8px;line-height:1.5;';
+        notice.innerHTML = `<svg style="flex-shrink:0;margin-top:1px;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Your message contains inappropriate language. Please revise before submitting.</span>`;
+        textarea.parentNode.appendChild(notice);
+        textarea.style.borderColor = '#ef4444';
+        textarea.style.boxShadow   = '0 0 0 3px rgba(239,68,68,0.12)';
+        textarea.focus();
+        return false;
+      }
+
+      const old = document.getElementById('censor-notice');
+      if (old) old.remove();
+      textarea.style.borderColor = '';
+      textarea.style.boxShadow   = '';
+      return true;
+    }
+
+    // ── Profanity word list ────────────────────────────────────────────────────
+    const BAD_WORDS = [
+      "fuck","fucking","fucked","fucker","shit","bitch","asshole","ass","bastard","cunt",
+      "dick","pussy","cock","whore","slut","nigger","nigga","faggot","fag","retard",
+      "motherfucker","mofo","bullshit","dumbass","piss","jackass","douche",
+      "putang ina","putangina","puta","gago","tangina","bobo","ulol","tanga",
+      "leche","lintik","pakyu","tarantado","kupal","hayop","bwisit","pakshet",
+      "hinayupak","burat","kantot","pepe","bilat","tite","pekpek",
+      "yawa","buang","atay","piste","boto","burikat","oten",
+      "yuta","estupido","estupida","walay kwenta","basura","libog"
+    ];
+  </script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+{% extends "AdminPage/layout.html" %}
+{% block title %}View Sit-In Records{% endblock %}
+{% block page_title %}Sit-In Records{% endblock %}
+{% block breadcrumb_current %}View Sit-In Records{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+    position: relative; overflow: hidden;
+  }
+  .chart-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.15), transparent);
+  }
+  .chart-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem; font-weight: 800;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: 14px;
+  }
+  .chart-wrap { position: relative; height: 180px; }
+
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .summary-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .summary-icon {
+    width: 42px; height: 42px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .summary-icon.blue  { background: rgba(59,130,246,0.1);  color: var(--blue); }
+  .summary-icon.green { background: rgba(16,185,129,0.1);  color: var(--success); }
+  .summary-icon.gold  { background: rgba(245,158,11,0.1);  color: var(--gold); }
+  .summary-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem; font-weight: 800; color: var(--text-1); line-height: 1;
+  }
+  .summary-lbl { font-size: 0.72rem; color: var(--text-3); margin-top: 3px; }
+
+  .records-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .records-count {
+    font-size: 0.75rem; color: var(--text-3); font-weight: 500;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Summary Cards -->
+<div class="summary-cards">
+  <div class="summary-card">
+    <div class="summary-icon blue">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    </div>
+    <div>
+      <div class="summary-val">{{ records|length }}</div>
+      <div class="summary-lbl">Total Completed Sessions</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-icon green">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </div>
+    <div>
+      <div class="summary-val">{{ unique_students }}</div>
+      <div class="summary-lbl">Unique Students</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-icon gold">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div>
+      <div class="summary-val">{{ top_purpose }}</div>
+      <div class="summary-lbl">Most Common Purpose</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="charts-row">
+  <div class="chart-card">
+    <div class="chart-title">Sessions by Purpose</div>
+    <div class="chart-wrap"><canvas id="purposeChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Sessions by Lab Room</div>
+    <div class="chart-wrap"><canvas id="labChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Sessions by Course</div>
+    <div class="chart-wrap"><canvas id="courseChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Records Table -->
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    </div>
+    <h3>Completed Sit-In Records</h3>
+  </div>
+
+  <div class="records-toolbar">
+    <div class="search-input-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" class="search-input" id="recordSearch" placeholder="Search records..." oninput="filterRecords()" style="max-width:280px;">
+    </div>
+    <span class="records-count">{{ records|length }} record{{ 's' if records|length != 1 else '' }}</span>
+  </div>
+
+  {% if records %}
+  <div style="overflow-x:auto;">
+    <table class="data-table" id="recordsTable">
+      <thead>
+        <tr>
+          <th>Sit-In #</th>
+          <th>ID Number</th>
+          <th>Name</th>
+          <th>Purpose</th>
+          <th>Lab Room</th>
+          <th>Login</th>
+          <th>Logout</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td style="font-family:'Syne',sans-serif; font-weight:700; color:var(--text-3);">{{ r.id }}</td>
+          <td style="font-family:'Syne',sans-serif; font-weight:700;">{{ r.student_id }}</td>
+          <td style="font-weight:500;">{{ r.lastname }}, {{ r.firstname }}</td>
+          <td><span class="badge badge-violet">{{ r.purpose }}</span></td>
+          <td><span class="badge badge-gold">{{ r.lab_room }}</span></td>
+          <td style="color:var(--text-2); font-size:0.8rem;">{{ r.time_in.split(' ')[1] if ' ' in r.time_in else r.time_in }}</td>
+          <td style="color:var(--text-2); font-size:0.8rem;">{{ r.time_out.split(' ')[1] if r.time_out and ' ' in r.time_out else (r.time_out or '—') }}</td>
+          <td style="color:var(--text-2); font-size:0.8rem;">{{ r.time_in.split(' ')[0] if ' ' in r.time_in else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <p>No completed sit-in records yet.</p>
+    <span>Records will appear here after students are timed out.</span>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Chart data from Flask
+  const purposeData  = {{ purpose_data | tojson }};
+  const labData      = {{ lab_data | tojson }};
+  const courseData   = {{ course_data | tojson }};
+
+  const COLORS = [
+    'rgba(99,102,241,0.8)', 'rgba(59,130,246,0.8)', 'rgba(16,185,129,0.8)',
+    'rgba(245,158,11,0.8)', 'rgba(239,68,68,0.8)',  'rgba(124,58,237,0.8)',
+    'rgba(14,165,233,0.8)', 'rgba(234,179,8,0.8)'
+  ];
+  const BORDERS = COLORS.map(c => c.replace('0.8','1'));
+
+  const chartDefaults = {
+    type: 'doughnut',
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { family: 'DM Sans', size: 11 }, padding: 10, boxWidth: 12 }
+        }
+      },
+      cutout: '60%'
+    }
+  };
+
+  function makeChart(id, data) {
+    const labels = Object.keys(data);
+    const values = Object.values(data);
+    if (!labels.length) return;
+    new Chart(document.getElementById(id), {
+      ...chartDefaults,
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: COLORS.slice(0, labels.length),
+          borderColor: BORDERS.slice(0, labels.length),
+          borderWidth: 1.5
+        }]
+      }
+    });
+  }
+
+  makeChart('purposeChart', purposeData);
+  makeChart('labChart', labData);
+  makeChart('courseChart', courseData);
+
+  function filterRecords() {
+    const q = document.getElementById('recordSearch').value.toLowerCase();
+    document.querySelectorAll('#recordsTable tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

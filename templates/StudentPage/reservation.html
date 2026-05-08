@@ -1,0 +1,723 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CCS | Reservation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <style>
+    /* ── Notification Bell ── */
+    .notif-wrap { position: relative; }
+    .btn-notif {
+      display: flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px; border-radius: var(--radius-md);
+      background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.18);
+      color: var(--indigo); cursor: pointer; transition: all var(--transition);
+      position: relative;
+    }
+    .btn-notif:hover { background: rgba(99,102,241,0.15); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(99,102,241,0.15); }
+    .notif-badge {
+      position: absolute; top: -4px; right: -4px;
+      min-width: 16px; height: 16px; border-radius: 99px;
+      padding: 0 4px;
+      background: var(--danger); color: white;
+      font-size: 0.55rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid white;
+    }
+    .notif-badge.hidden { display: none; }
+    .notif-dropdown {
+      position: absolute; top: calc(100% + 10px); right: 0;
+      width: 320px; background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg); z-index: 9999;
+      opacity: 0; pointer-events: none;
+      transform: translateY(-8px);
+      transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+    .notif-dropdown.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+    .notif-dropdown-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px 10px; border-bottom: 1.5px solid var(--border);
+    }
+    .notif-dropdown-header span { font-family:'Syne',sans-serif; font-size:0.82rem; font-weight:800; color:var(--text-1); }
+    .notif-mark-all { font-size:0.68rem; font-weight:600; color:var(--indigo); cursor:pointer; background:none; border:none; padding:0; }
+    .notif-list { max-height: 280px; overflow-y: auto; }
+    .notif-item {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 12px 16px; border-bottom: 1px solid rgba(99,102,241,0.06);
+      transition: background var(--transition); cursor: pointer;
+    }
+    .notif-item:hover { background: var(--bg-card-2); }
+    .notif-item.unread { background: rgba(99,102,241,0.04); }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-dot { width:8px; height:8px; border-radius:50%; background:var(--indigo); flex-shrink:0; margin-top:5px; }
+    .notif-dot.read { background:transparent; border:1.5px solid var(--border); }
+    .notif-item-title { font-size:0.78rem; font-weight:600; color:var(--text-1); margin-bottom:2px; }
+    .notif-item-body  { font-size:0.72rem; color:var(--text-2); line-height:1.5; }
+    .notif-item-time  { font-size:0.65rem; color:var(--text-3); margin-top:3px; }
+    .notif-empty { padding:32px 16px; text-align:center; font-size:0.78rem; color:var(--text-3); }
+
+    /* ── Reservation Layout ── */
+    .res-layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* ── Tips Card ── */
+    .tips-card {
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      border: 1.5px solid rgba(245,158,11,0.25);
+      border-radius: var(--radius-xl); padding: 18px;
+      box-shadow: 0 4px 20px rgba(245,158,11,0.1);
+      margin-bottom: 16px; position: relative; overflow: hidden;
+    }
+    .tips-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      background: linear-gradient(90deg, var(--gold), #f97316);
+    }
+    .tips-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    .tips-icon {
+      width:28px; height:28px; border-radius:8px;
+      background:rgba(245,158,11,0.15);
+      display:flex; align-items:center; justify-content:center; color:var(--gold);
+    }
+    .tips-title { font-family:'Syne',sans-serif; font-size:0.75rem; font-weight:800; color:#92400e; }
+    .tips-list { display:flex; flex-direction:column; gap:6px; }
+    .tip-item {
+      display:flex; align-items:flex-start; gap:8px; padding:7px 10px;
+      background:rgba(255,255,255,0.6); border-radius:var(--radius-md);
+      border:1px solid rgba(245,158,11,0.15);
+    }
+    .tip-item-text { font-size:0.74rem; color:#78350f; line-height:1.5; }
+    .tip-no-tips { font-size:0.74rem; color:#b45309; font-style:italic; text-align:center; padding:6px 0; }
+
+    /* ── Form Card ── */
+    .res-form-section { display:flex; flex-direction:column; gap:12px; }
+    .res-field { display:flex; flex-direction:column; gap:5px; }
+
+    /* Lab selector tabs */
+    .lab-tabs {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+    }
+    .lab-tab-btn {
+      font-family:'Syne',sans-serif; font-size:0.72rem; font-weight:700;
+      padding:6px 14px; border-radius:var(--radius-md);
+      border:1.5px solid var(--border); background:var(--bg-card-2);
+      color:var(--text-2); cursor:pointer; transition:all var(--transition);
+    }
+    .lab-tab-btn:hover { border-color:var(--indigo); color:var(--indigo); }
+    .lab-tab-btn.active {
+      background:linear-gradient(135deg,var(--blue),var(--violet));
+      color:white; border-color:transparent;
+      box-shadow:0 3px 10px rgba(99,102,241,0.3);
+    }
+
+    /* ── PC Grid ── */
+    .pc-grid-wrap {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.9);
+      border-radius: var(--radius-xl); padding: 20px;
+      box-shadow: var(--shadow-md);
+    }
+    .pc-grid-header {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:16px; padding-bottom:12px; border-bottom:1.5px solid var(--border);
+      flex-wrap:wrap; gap:10px;
+    }
+    .pc-grid-title {
+      font-family:'Syne',sans-serif; font-size:0.88rem; font-weight:800; color:var(--text-1);
+    }
+    .pc-legend {
+      display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+    }
+    .pc-legend-item {
+      display:flex; align-items:center; gap:5px;
+      font-size:0.68rem; color:var(--text-2); font-weight:500;
+    }
+    .legend-dot {
+      width:12px; height:12px; border-radius:4px;
+    }
+    .legend-available  { background:rgba(16,185,129,0.15); border:1.5px solid rgba(16,185,129,0.4); }
+    .legend-selected   { background:linear-gradient(135deg,var(--blue),var(--violet)); }
+    .legend-reserved   { background:rgba(245,158,11,0.2); border:1.5px solid rgba(245,158,11,0.4); }
+    .legend-unavailable{ background:rgba(239,68,68,0.1); border:1.5px solid rgba(239,68,68,0.3); }
+
+    .pc-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 8px;
+    }
+    .pc-item {
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
+      border: 1.5px solid rgba(16,185,129,0.35);
+      background: rgba(16,185,129,0.07);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      cursor: pointer; transition: all var(--transition);
+      position: relative; gap: 2px;
+      min-height: 52px;
+    }
+    .pc-item:hover:not(.unavailable):not(.reserved) {
+      border-color: var(--indigo);
+      background: rgba(99,102,241,0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99,102,241,0.15);
+    }
+    .pc-item.selected {
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+      transform: translateY(-2px);
+    }
+    .pc-item.reserved {
+      background: rgba(245,158,11,0.1);
+      border-color: rgba(245,158,11,0.4);
+      cursor: not-allowed;
+    }
+    .pc-item.unavailable {
+      background: rgba(239,68,68,0.06);
+      border-color: rgba(239,68,68,0.25);
+      cursor: not-allowed; opacity: 0.7;
+    }
+    .pc-item svg { width:18px; height:18px; flex-shrink:0; }
+    .pc-item:not(.selected) svg { color: var(--success); }
+    .pc-item.selected svg { color: white; }
+    .pc-item.reserved svg { color: var(--gold); }
+    .pc-item.unavailable svg { color: var(--danger); }
+    .pc-num {
+      font-family:'Syne',sans-serif; font-size:0.6rem; font-weight:700;
+      color: var(--text-3); line-height:1;
+    }
+    .pc-item.selected .pc-num { color: rgba(255,255,255,0.8); }
+    .pc-item.reserved .pc-num { color: var(--gold); }
+    .pc-item.unavailable .pc-num { color: var(--danger); }
+
+    /* Selected PC info */
+    .selected-pc-info {
+      margin-top:14px; padding:12px 14px;
+      background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(124,58,237,0.08));
+      border: 1.5px solid var(--border-med);
+      border-radius: var(--radius-lg);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .selected-pc-info.hidden { display: none; }
+    .selected-pc-badge {
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      color: white; font-family:'Syne',sans-serif;
+      font-size:0.78rem; font-weight:800;
+      padding:6px 14px; border-radius:99px;
+      white-space: nowrap;
+    }
+    .selected-pc-label { font-size:0.76rem; color:var(--text-2); }
+
+    /* Sessions remaining */
+    .sessions-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px;
+      background:var(--bg-card-2); border:1px solid var(--border);
+      border-radius:var(--radius-md); margin-top:4px;
+    }
+    .sessions-label { font-size:0.68rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-3); }
+    .sessions-value { font-family:'Syne',sans-serif; font-size:1rem; font-weight:800; color:var(--indigo); }
+
+    /* Status badges */
+    .status-pending  { background:rgba(245,158,11,0.1);  color:var(--gold);    border:1px solid rgba(245,158,11,0.25); }
+    .status-approved { background:rgba(16,185,129,0.1);  color:var(--success); border:1px solid rgba(16,185,129,0.25); }
+    .status-rejected { background:rgba(239,68,68,0.1);   color:var(--danger);  border:1px solid rgba(239,68,68,0.25); }
+
+    /* History table */
+    .res-table { width:100%; border-collapse:collapse; }
+    .res-table thead tr { background:linear-gradient(135deg,#1e293b,#0f172a); }
+    .res-table thead th {
+      padding:12px 14px; text-align:left;
+      font-family:'Syne',sans-serif; font-size:0.68rem; font-weight:700;
+      color:rgba(255,255,255,0.75); letter-spacing:0.8px; text-transform:uppercase;
+    }
+    .res-table thead th:first-child { border-radius:12px 0 0 12px; }
+    .res-table thead th:last-child  { border-radius:0 12px 12px 0; }
+    .res-table tbody tr { border-bottom:1px solid var(--border); transition:background var(--transition); }
+    .res-table tbody tr:hover { background:rgba(99,102,241,0.03); }
+    .res-table tbody tr:last-child { border-bottom:none; }
+    .res-table tbody td { padding:12px 14px; font-size:0.82rem; vertical-align:middle; }
+
+    /* Tooltip */
+    .pc-item[data-tip]:hover::after {
+      content: attr(data-tip);
+      position: absolute; bottom: calc(100% + 6px); left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a; color: white;
+      font-size: 0.62rem; font-weight: 600;
+      padding: 4px 8px; border-radius: 6px;
+      white-space: nowrap; z-index: 999;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <script>
+    const STUDENT_ID = "{{ student.student_id }}";
+    const PIC_KEY    = "profile_pic_" + STUDENT_ID;
+  </script>
+
+  <nav class="topnav">
+    <div class="topnav-left">
+      <div class="nav-brand">
+        <img src="{{ url_for('static', filename='uclogo.png') }}" alt="UC" class="brand-logo">
+        <div class="brand-text">
+          <span class="brand-title">CCS SitIn</span>
+          <span class="brand-sub">MONITORING SYSTEM</span>
+        </div>
+      </div>
+      <div class="nav-tabs">
+        <a href="/dashboard" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="/edit_profile" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Edit Profile
+        </a>
+        <a href="/history" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          History
+        </a>
+        <a href="/reservation" class="nav-tab active">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Reservation
+        </a>
+        <a href="/student/lab-software" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Lab Software
+        </a>
+      </div>
+    </div>
+    <div class="topnav-right">
+      <!-- Notification Bell -->
+      <div class="notif-wrap">
+        <button class="btn-notif" onclick="toggleNotif(event)" title="Notifications">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-badge {% if unread_count == 0 %}hidden{% endif %}" id="notifBadge">
+            {{ unread_count if unread_count <= 9 else '9+' }}
+          </span>
+        </button>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-dropdown-header">
+            <span>Notifications</span>
+            {% if notifications %}
+            <form method="POST" action="/notifications/mark_all_read" style="display:inline;">
+              <button type="submit" class="notif-mark-all">Mark all read</button>
+            </form>
+            {% endif %}
+          </div>
+          <div class="notif-list">
+            {% if notifications %}
+              {% for n in notifications %}
+              <div class="notif-item {% if not n.is_read %}unread{% endif %}" onclick="markRead({{ n.id }})">
+                <div class="notif-dot {% if n.is_read %}read{% endif %}"></div>
+                <div>
+                  <div class="notif-item-title">{{ n.title }}</div>
+                  <div class="notif-item-body">{{ n.message }}</div>
+                  <div class="notif-item-time">{{ n.created_at }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="notif-empty">No notifications yet</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-user">
+        <div class="nav-avatar" id="nav-avatar">{{ student.firstname[0] }}{{ student.lastname[0] }}</div>
+        <span class="nav-username">{{ student.lastname }}</span>
+      </div>
+      <a href="/logout" class="btn-logout">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="breadcrumb">
+      <span class="bc-title">Reservation</span>
+      <div class="bc-path"><span>CCS SitIn</span><span class="bc-sep">›</span><span>Reservation</span></div>
+    </div>
+    <div class="section-content">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      {% if reservations_closed %}
+      <div style="display:flex; align-items:center; gap:12px; padding:14px 18px; margin-bottom:20px;
+        background:rgba(239,68,68,0.07); border:1.5px solid rgba(239,68,68,0.2); border-radius:var(--radius-lg);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span style="font-size:0.84rem; color:#b91c1c; font-weight:500;">
+          <strong>Reservations are currently closed.</strong>
+          {% if reservations_closed_msg %} {{ reservations_closed_msg }}{% endif %}
+        </span>
+      </div>
+      {% endif %}
+
+      <div class="res-layout">
+
+        <!-- LEFT: Form -->
+        <div>
+          <!-- Tips -->
+          {% if tips %}
+          <div class="tips-card">
+            <div class="tips-header">
+              <div class="tips-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <span class="tips-title">💡 LAB TIPS &amp; RECOMMENDATIONS</span>
+            </div>
+            <div class="tips-list">
+              {% for tip in tips %}
+              <div class="tip-item">
+                <span style="font-size:0.85rem; flex-shrink:0;">{{ tip.icon or '📌' }}</span>
+                <div class="tip-item-text">{{ tip.message }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Reservation Form -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <h3>New Reservation</h3>
+            </div>
+
+            {% if has_pending %}
+            <div class="flash flash-error" style="margin-bottom:0;">
+              You already have a <strong>pending reservation</strong>. Wait for it to be processed first.
+            </div>
+            {% elif reservations_closed %}
+            <div class="flash flash-error" style="margin-bottom:0;">
+              Reservations are currently closed by the administrator.
+            </div>
+            {% else %}
+            <form method="POST" action="/submit_reservation" id="resForm">
+              <input type="hidden" name="pc_number" id="pcNumberInput">
+
+              <div class="res-form-section">
+                <!-- Student Info (read-only display) -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                  <div class="res-field">
+                    <label class="form-label">ID Number</label>
+                    <div style="padding:9px 13px; background:var(--bg-card-2); border:1.5px solid var(--border); border-radius:var(--radius-md); font-size:0.84rem; color:var(--text-3);">
+                      {{ student.student_id }}
+                    </div>
+                  </div>
+                  <div class="res-field">
+                    <label class="form-label">Student Name</label>
+                    <div style="padding:9px 13px; background:var(--bg-card-2); border:1.5px solid var(--border); border-radius:var(--radius-md); font-size:0.84rem; color:var(--text-3);">
+                      {{ student.firstname }} {{ student.lastname }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Purpose -->
+                <div class="res-field">
+                  <label class="form-label">Purpose <span style="color:var(--danger)">*</span></label>
+                  <select name="purpose" class="form-input" required>
+                    <option value="" disabled selected>Select purpose...</option>
+                    <option value="C Programming">C Programming</option>
+                    <option value="Java Programming">Java Programming</option>
+                    <option value="Python Programming">Python Programming</option>
+                    <option value="Web Development">Web Development</option>
+                    <option value="Database">Database</option>
+                    <option value="Research / Study">Research / Study</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <!-- Date -->
+                <div class="res-field">
+                  <label class="form-label">Date <span style="color:var(--danger)">*</span></label>
+                  <input type="date" name="date" id="dateInput" class="form-input"
+                    min="{{ today }}" required onchange="refreshGrid()">
+                </div>
+
+                <!-- Lab -->
+                <div class="res-field">
+                  <label class="form-label">Laboratory <span style="color:var(--danger)">*</span></label>
+                  <div class="lab-tabs">
+                    {% for lab in ['Lab 524','Lab 526','Lab 528','Lab 530','Lab 542','Lab 544'] %}
+                    <button type="button" class="lab-tab-btn {% if loop.first %}active{% endif %}"
+                      onclick="selectLab(this, '{{ lab }}')">{{ lab }}</button>
+                    {% endfor %}
+                  </div>
+                  <input type="hidden" name="lab_room" id="labInput" value="Lab 524">
+                </div>
+
+                <!-- Time Slot -->
+                <div class="res-field">
+                  <label class="form-label">Time Slot <span style="color:var(--danger)">*</span></label>
+                  <select name="time_slot" id="timeSlotSelect" class="form-input" required onchange="refreshGrid()">
+                    <option value="" disabled selected>Select time slot...</option>
+                    <option value="07:00 – 09:00">07:00 – 09:00 AM</option>
+                    <option value="09:00 – 11:00">09:00 – 11:00 AM</option>
+                    <option value="11:00 – 13:00">11:00 – 1:00 PM</option>
+                    <option value="13:00 – 15:00">1:00 – 3:00 PM</option>
+                    <option value="15:00 – 17:00">3:00 – 5:00 PM</option>
+                    <option value="17:00 – 19:00">5:00 – 7:00 PM</option>
+                    <option value="19:00 – 21:00">7:00 – 9:00 PM</option>
+                  </select>
+                </div>
+
+                <!-- Sessions Remaining -->
+                <div class="sessions-bar">
+                  <span class="sessions-label">Sessions Remaining</span>
+                  <span class="sessions-value">{{ student_sessions_left }}</span>
+                </div>
+
+              </div>
+
+              <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+                <button type="submit" class="btn btn-primary" id="reserveBtn" disabled
+                  style="opacity:0.5; cursor:not-allowed;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Reserve
+                </button>
+              </div>
+            </form>
+            {% endif %}
+          </div>
+
+          <!-- My Reservations -->
+          <div class="panel" style="margin-top:20px;">
+            <div class="panel-header">
+              <div class="panel-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <h3>My Reservations</h3>
+            </div>
+            {% if reservations %}
+            <div style="overflow-x:auto;">
+              <table class="res-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Lab</th>
+                    <th>PC</th>
+                    <th>Time Slot</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in reservations %}
+                  <tr>
+                    <td style="font-size:0.78rem; color:var(--text-2); white-space:nowrap;">{{ r.date }}</td>
+                    <td><span class="badge badge-gold">{{ r.lab_room }}</span></td>
+                    <td style="font-family:'Syne',sans-serif; font-weight:700; font-size:0.8rem;">{{ r.pc_number or '—' }}</td>
+                    <td style="font-size:0.76rem; color:var(--text-2); white-space:nowrap;">{{ r.time_slot }}</td>
+                    <td><span class="badge badge-violet">{{ r.purpose }}</span></td>
+                    <td>
+                      <span class="badge status-{{ r.status }}">
+                        {% if r.status == 'pending' %}⏳ Pending
+                        {% elif r.status == 'approved' %}✅ Approved
+                        {% else %}❌ Rejected{% endif %}
+                      </span>
+                    </td>
+                    <td style="font-size:0.74rem; color:var(--text-3);">{{ r.admin_remarks or '—' }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding:36px 20px;">
+              <div class="empty-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <p>No reservations yet.</p>
+              <span>Select a PC from the grid and submit your reservation.</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- RIGHT: PC Grid -->
+        <div class="pc-grid-wrap">
+          <div class="pc-grid-header">
+            <div>
+              <div class="pc-grid-title" id="gridTitle">Lab 524 — Select a PC</div>
+              <div style="font-size:0.72rem; color:var(--text-3); margin-top:2px;">
+                Click an available PC to select it for your reservation
+              </div>
+            </div>
+            <div class="pc-legend">
+              <div class="pc-legend-item"><div class="legend-dot legend-available"></div>Available</div>
+              <div class="pc-legend-item"><div class="legend-dot legend-selected"></div>Selected</div>
+              <div class="pc-legend-item"><div class="legend-dot legend-reserved"></div>Reserved</div>
+              <div class="pc-legend-item"><div class="legend-dot legend-unavailable"></div>Unavailable</div>
+            </div>
+          </div>
+
+          <div class="pc-grid" id="pcGrid">
+            <!-- Generated by JS -->
+          </div>
+
+          <div class="selected-pc-info hidden" id="selectedInfo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--indigo)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span class="selected-pc-badge" id="selectedPcBadge">PC 1</span>
+            <span class="selected-pc-label">selected — click Reserve to confirm</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Data from Flask
+    const BLOCKED_SLOTS  = {{ blocked_slots | tojson }};
+    const RESERVED_PCS   = {{ reserved_pcs | tojson }};   // { "Lab 524|2026-04-12|07:00 – 09:00": [1,3,5] }
+    const UNAVAILABLE_PCS= {{ unavailable_pcs | tojson }}; // { "Lab 524": [10, 15] }
+
+    let currentLab  = 'Lab 524';
+    let selectedPC  = null;
+
+    const PC_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`;
+
+    function selectLab(btn, lab) {
+      document.querySelectorAll('.lab-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentLab = lab;
+      document.getElementById('labInput').value = lab;
+      selectedPC = null;
+      document.getElementById('pcNumberInput').value = '';
+      updateReserveBtn();
+      renderGrid();
+    }
+
+    function refreshGrid() {
+      selectedPC = null;
+      document.getElementById('pcNumberInput').value = '';
+      updateReserveBtn();
+      renderGrid();
+    }
+
+    function renderGrid() {
+      const date     = document.getElementById('dateInput').value;
+      const timeSlot = document.getElementById('timeSlotSelect').value;
+      const grid     = document.getElementById('pcGrid');
+      const title    = document.getElementById('gridTitle');
+
+      title.textContent = currentLab + ' — Select a PC';
+
+      const reservedKey  = currentLab + '|' + date + '|' + timeSlot;
+      const reservedList = RESERVED_PCS[reservedKey] || [];
+      const unavailList  = UNAVAILABLE_PCS[currentLab] || [];
+
+      let html = '';
+      for (let i = 1; i <= 40; i++) {
+        const isReserved   = reservedList.includes(i);
+        const isUnavail    = unavailList.includes(i);
+        const isSelected   = selectedPC === i;
+
+        let cls  = 'pc-item';
+        let tip  = '';
+        if (isSelected)        { cls += ' selected';   tip = 'PC ' + i + ' — Selected'; }
+        else if (isUnavail)    { cls += ' unavailable'; tip = 'PC ' + i + ' — Unavailable'; }
+        else if (isReserved)   { cls += ' reserved';   tip = 'PC ' + i + ' — Already reserved'; }
+        else                   {                        tip = 'PC ' + i + ' — Click to select'; }
+
+        const clickable = !isUnavail && !isReserved;
+        html += `<div class="${cls}" data-pc="${i}" data-tip="${tip}"
+          ${clickable ? `onclick="selectPC(${i})"` : ''}>
+          ${PC_ICON}
+          <span class="pc-num">${i}</span>
+        </div>`;
+      }
+      grid.innerHTML = html;
+
+      // Update selected info bar
+      const info = document.getElementById('selectedInfo');
+      if (selectedPC) {
+        info.classList.remove('hidden');
+        document.getElementById('selectedPcBadge').textContent = 'PC ' + selectedPC;
+      } else {
+        info.classList.add('hidden');
+      }
+    }
+
+    function selectPC(num) {
+      const date     = document.getElementById('dateInput').value;
+      const timeSlot = document.getElementById('timeSlotSelect').value;
+      if (!date || !timeSlot) {
+        alert('Please select a date and time slot first.');
+        return;
+      }
+      selectedPC = num;
+      document.getElementById('pcNumberInput').value = 'PC ' + num;
+      updateReserveBtn();
+      renderGrid();
+    }
+
+    function updateReserveBtn() {
+      const btn  = document.getElementById('reserveBtn');
+      if (!btn) return;
+      const date = document.getElementById('dateInput').value;
+      const slot = document.getElementById('timeSlotSelect').value;
+      const ok   = selectedPC && date && slot;
+      btn.disabled = !ok;
+      btn.style.opacity  = ok ? '1' : '0.5';
+      btn.style.cursor   = ok ? 'pointer' : 'not-allowed';
+    }
+
+    // Notification
+    function toggleNotif(e) {
+      e.stopPropagation();
+      document.getElementById('notifDropdown').classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+      const wrap = document.querySelector('.notif-wrap');
+      if (wrap && !wrap.contains(e.target))
+        document.getElementById('notifDropdown').classList.remove('open');
+    });
+    function markRead(id) {
+      fetch('/notifications/mark_read/' + id, { method: 'POST' }).then(() => {
+        const badge = document.getElementById('notifBadge');
+        let count = parseInt(badge.textContent) || 0;
+        if (count > 0) count--;
+        if (count === 0) badge.classList.add('hidden');
+        else badge.textContent = count;
+      });
+    }
+
+    // Profile pic
+    window.addEventListener('load', function() {
+      renderGrid();
+      const saved = localStorage.getItem(PIC_KEY);
+      if (saved) {
+        const nav = document.getElementById('nav-avatar');
+        nav.style.backgroundImage = `url(${saved})`;
+        nav.style.backgroundSize = 'cover';
+        nav.style.backgroundPosition = 'center';
+        nav.textContent = '';
+      }
+    });
+
+    // Watch date + time changes
+    document.getElementById('dateInput')?.addEventListener('change', updateReserveBtn);
+    document.getElementById('timeSlotSelect')?.addEventListener('change', updateReserveBtn);
+  </script>
+</body>
+</html>

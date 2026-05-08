@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CCS | Lab Software</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <style>
+    .sw-toolbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:22px; }
+    .sw-search-wrap { position:relative; flex:1; min-width:200px; max-width:340px; }
+    .sw-search-wrap svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-3); pointer-events:none; }
+    .sw-search { width:100%; padding:9px 14px 9px 36px; background:var(--bg-card-2); border:1.5px solid var(--border); border-radius:var(--radius-md); font-family:'DM Sans',sans-serif; font-size:0.84rem; color:var(--text-1); transition:all var(--transition); outline:none; }
+    .sw-search:focus { border-color:var(--indigo); background:white; box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
+
+    .lab-pills { display:flex; gap:6px; flex-wrap:wrap; }
+    .lab-pill { font-family:'Syne',sans-serif; font-size:0.7rem; font-weight:700; padding:5px 13px; border-radius:99px; border:1.5px solid var(--border); background:var(--bg-card); color:var(--text-2); cursor:pointer; transition:all var(--transition); }
+    .lab-pill:hover { border-color:var(--indigo); color:var(--indigo); }
+    .lab-pill.active { background:linear-gradient(135deg,var(--blue),var(--violet)); color:white; border-color:transparent; box-shadow:0 3px 10px rgba(99,102,241,0.3); }
+
+    .labs-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    @media(max-width:900px) { .labs-grid { grid-template-columns:1fr; } }
+
+    .lab-card { border-radius:var(--radius-xl); overflow:hidden; box-shadow:var(--shadow-md); border:1px solid rgba(255,255,255,0.9); transition:all var(--transition); }
+    .lab-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-2px); }
+    .lab-card.lab-hidden { display:none; }
+
+    .lab-card-hdr { background:linear-gradient(135deg,#1e293b,#0f172a); padding:13px 18px; display:flex; align-items:center; gap:12px; cursor:pointer; user-select:none; position:relative; overflow:hidden; }
+    .lab-card-hdr::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(99,102,241,0.4),transparent); }
+
+    .lab-hdr-icon { width:34px; height:34px; border-radius:8px; flex-shrink:0; background:linear-gradient(135deg,var(--blue),var(--violet)); display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(99,102,241,0.35); }
+    .lab-hdr-name { font-family:'Syne',sans-serif; font-size:0.88rem; font-weight:800; color:white; margin-bottom:2px; }
+    .lab-hdr-sub  { font-size:0.62rem; color:rgba(255,255,255,0.38); }
+
+    .lab-hdr-right { margin-left:auto; display:flex; align-items:center; gap:9px; flex-shrink:0; }
+    .app-pill { font-family:'Syne',sans-serif; font-size:0.62rem; font-weight:800; padding:2px 10px; border-radius:99px; background:linear-gradient(135deg,var(--gold),#f97316); color:white; box-shadow:0 2px 6px rgba(245,158,11,0.3); }
+    .lab-chevron { width:22px; height:22px; border-radius:5px; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.5); transition:transform var(--transition); }
+    .lab-card.collapsed .lab-chevron { transform:rotate(-90deg); }
+
+    .lab-card-body { background:var(--bg-card); }
+    .lab-card.collapsed .lab-card-body { display:none; }
+
+    .sw-row { display:flex; align-items:center; gap:11px; padding:9px 18px; border-bottom:1px solid rgba(99,102,241,0.06); transition:background var(--transition); }
+    .sw-row:last-child { border-bottom:none; }
+    .sw-row:hover { background:rgba(99,102,241,0.03); }
+    .sw-row.sw-hidden { display:none; }
+
+    .sw-ic { width:26px; height:26px; border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+    .ic-ide  { background:rgba(99,102,241,0.1); color:#6366f1; }
+    .ic-web  { background:rgba(59,130,246,0.1); color:#3b82f6; }
+    .ic-dev  { background:rgba(16,185,129,0.1); color:#10b981; }
+    .ic-db   { background:rgba(245,158,11,0.1); color:#f59e0b; }
+    .ic-tool { background:rgba(148,163,184,0.1); color:#94a3b8; }
+    .ic-os   { background:rgba(239,68,68,0.1); color:#ef4444; }
+
+    .sw-name { font-family:'Syne',sans-serif; font-size:0.78rem; font-weight:700; color:var(--text-1); }
+    .sw-ver  { font-size:0.64rem; color:var(--text-3); margin-top:1px; }
+
+    .sw-tag { font-size:0.58rem; font-weight:800; padding:2px 7px; border-radius:99px; letter-spacing:0.4px; flex-shrink:0; margin-left:auto; }
+    .t-ide  { background:rgba(99,102,241,0.1);  color:#6366f1; border:1px solid rgba(99,102,241,0.2); }
+    .t-web  { background:rgba(59,130,246,0.1);  color:#3b82f6; border:1px solid rgba(59,130,246,0.2); }
+    .t-dev  { background:rgba(16,185,129,0.1);  color:#10b981; border:1px solid rgba(16,185,129,0.2); }
+    .t-db   { background:rgba(245,158,11,0.1);  color:#f59e0b; border:1px solid rgba(245,158,11,0.2); }
+    .t-tool { background:rgba(148,163,184,0.1); color:#94a3b8; border:1px solid rgba(148,163,184,0.2); }
+    .t-os   { background:rgba(239,68,68,0.1);   color:#ef4444; border:1px solid rgba(239,68,68,0.2); }
+
+    .lab-empty-msg { padding:24px; text-align:center; font-size:0.74rem; color:var(--text-3); background:var(--bg-card); }
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-left">
+      <div class="nav-brand">
+        <img src="{{ url_for('static', filename='uclogo.png') }}" alt="UC" class="brand-logo">
+        <div class="brand-text">
+          <span class="brand-title">CCS SitIn</span>
+          <span class="brand-sub">MONITORING SYSTEM</span>
+        </div>
+      </div>
+      <div class="nav-tabs">
+        <a href="/dashboard" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="/edit_profile" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Edit Profile
+        </a>
+        <a href="/history" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          History
+        </a>
+        <a href="/reservation" class="nav-tab">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Reservation
+        </a>
+        <a href="/student/lab-software" class="nav-tab active">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Lab Software
+        </a>
+      </div>
+    </div>
+    <div class="topnav-right">
+      <div class="nav-user">
+        <div class="nav-avatar" id="nav-avatar">{{ student.firstname[0] }}{{ student.lastname[0] }}</div>
+        <span class="nav-username">{{ student.lastname }}</span>
+      </div>
+      <a href="/logout" class="btn-logout">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="breadcrumb">
+      <span class="bc-title">Lab Software</span>
+      <div class="bc-path"><span>CCS SitIn</span><span class="bc-sep">›</span><span>Lab Software</span></div>
+    </div>
+    <div class="section-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat,msg in messages %}<div class="flash flash-{{ cat }}">{{ msg }}</div>{% endfor %}{% endif %}
+      {% endwith %}
+
+      <div class="panel full-panel">
+        <div class="panel-header">
+          <div class="panel-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3>Lab Software Directory</h3>
+        </div>
+
+        {% if not is_published %}
+        <div class="empty-state">
+          <div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <p>Not available yet.</p>
+          <span>The admin hasn't published the software list.</span>
+        </div>
+        {% else %}
+
+        <!-- Toolbar -->
+        <div class="sw-toolbar">
+          <div class="sw-search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="sw-search" id="swSearch" placeholder="Search software across all labs…" oninput="filterSoftware()">
+          </div>
+          <div class="lab-pills">
+            <button class="lab-pill active" onclick="filterByLab('all',this)">All Labs</button>
+            {% for lab in ALL_LABS %}
+            <button class="lab-pill" onclick="filterByLab('{{ lab }}',this)">{{ lab }}</button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Labs Grid -->
+        <div class="labs-grid" id="labsGrid">
+          {% for lab in ALL_LABS %}
+          {% set sw_list = grouped_software.get(lab, []) %}
+          <div class="lab-card" id="lc-{{ loop.index0 }}" data-lab="{{ lab }}">
+
+            <div class="lab-card-hdr" onclick="toggleCard('lc-{{ loop.index0 }}')">
+              <div class="lab-hdr-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div>
+                <div class="lab-hdr-name">Laboratory {{ lab.replace('Lab ','') }}</div>
+                <div class="lab-hdr-sub">Windows · Programming Suite</div>
+              </div>
+              <div class="lab-hdr-right">
+                <span class="app-pill" id="apill-{{ loop.index0 }}">{{ sw_list|length }} apps</span>
+                <div class="lab-chevron">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+            </div>
+
+            {% if sw_list %}
+            <div class="lab-card-body">
+              {% for sw in sw_list %}
+              {% set c = sw.category|lower %}
+              <div class="sw-row" data-name="{{ sw.name|lower }}" data-ver="{{ (sw.version or '')|lower }}" data-lab="{{ lab }}">
+                <div class="sw-ic ic-{{ c }}">
+                  {% if c=='ide' %}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                  {% elif c=='web' %}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  {% elif c=='dev' %}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                  {% elif c=='db'  %}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                  {% else %}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+                  {% endif %}
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div class="sw-name">{{ sw.name }}</div>
+                  {% if sw.version %}<div class="sw-ver">{{ sw.version }}</div>{% endif %}
+                </div>
+                <span class="sw-tag t-{{ c }}">{{ sw.category }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="lab-empty-msg">No software listed yet.</div>
+            {% endif %}
+
+          </div>
+          {% endfor %}
+        </div>
+
+        <div id="noResults" style="display:none;padding:40px;text-align:center;font-size:0.8rem;color:var(--text-3);">No software found.</div>
+
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeLab = 'all';
+
+    function toggleCard(id) { document.getElementById(id).classList.toggle('collapsed'); }
+
+    function filterByLab(lab, btn) {
+      activeLab = lab;
+      document.querySelectorAll('.lab-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.lab-card').forEach(c => {
+        c.classList.toggle('lab-hidden', lab !== 'all' && c.dataset.lab !== lab);
+      });
+      filterSoftware();
+    }
+
+    function filterSoftware() {
+      const q = document.getElementById('swSearch').value.toLowerCase().trim();
+      let total = 0;
+      document.querySelectorAll('.lab-card').forEach(card => {
+        if (card.classList.contains('lab-hidden')) return;
+        let vis = 0;
+        card.querySelectorAll('.sw-row').forEach(r => {
+          const ok = !q || r.dataset.name.includes(q) || r.dataset.ver.includes(q);
+          r.classList.toggle('sw-hidden', !ok);
+          if (ok) vis++;
+        });
+        const idx = card.id.replace('lc-','');
+        const pill = document.getElementById('apill-'+idx);
+        if (pill) pill.textContent = vis + ' app' + (vis!==1?'s':'');
+        if (q && vis===0) card.classList.add('lab-hidden');
+        else if (q && vis>0) { card.classList.remove('lab-hidden','collapsed'); }
+        if (!card.classList.contains('lab-hidden')) total += vis;
+      });
+      document.getElementById('noResults').style.display = (q && total===0) ? 'block' : 'none';
+      if (!q) {
+        document.querySelectorAll('.lab-card').forEach(card => {
+          const idx   = card.id.replace('lc-','');
+          const pill  = document.getElementById('apill-'+idx);
+          const count = card.querySelectorAll('.sw-row').length;
+          if (pill) pill.textContent = count + ' app' + (count!==1?'s':'');
+          card.classList.toggle('lab-hidden', activeLab !== 'all' && card.dataset.lab !== activeLab);
+        });
+      }
+    }
+
+    window.addEventListener('load', () => {
+      const saved = localStorage.getItem("profile_pic_" + "{{ student.student_id }}");
+      if (saved) {
+        const nav = document.getElementById('nav-avatar');
+        nav.style.backgroundImage = `url(${saved})`;
+        nav.style.backgroundSize = 'cover';
+        nav.style.backgroundPosition = 'center';
+        nav.textContent = '';
+      }
+    });
+  </script>
+</body>
+</html>

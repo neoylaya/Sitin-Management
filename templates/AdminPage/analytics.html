@@ -1,0 +1,847 @@
+{% extends "AdminPage/layout.html" %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Analytics Dashboard{% endblock %}
+{% block breadcrumb_current %}Analytics{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  /* ── KPI STRIP ── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: var(--radius-xl);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-md);
+    display: flex; align-items: center; gap: 14px;
+    position: relative; overflow: hidden;
+    transition: all var(--transition);
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .kpi-card.blue::before   { background: linear-gradient(90deg, var(--blue), var(--indigo)); }
+  .kpi-card.green::before  { background: linear-gradient(90deg, var(--success), #34d399); }
+  .kpi-card.gold::before   { background: linear-gradient(90deg, var(--gold), #f97316); }
+  .kpi-card.violet::before { background: linear-gradient(90deg, var(--violet), var(--indigo)); }
+  .kpi-card.rose::before   { background: linear-gradient(90deg, #f43f5e, #ec4899); }
+  .kpi-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .kpi-icon {
+    width: 44px; height: 44px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .kpi-card.blue   .kpi-icon { background: rgba(59,130,246,0.1);  color: var(--blue); }
+  .kpi-card.green  .kpi-icon { background: rgba(16,185,129,0.1);  color: var(--success); }
+  .kpi-card.gold   .kpi-icon { background: rgba(245,158,11,0.1);  color: var(--gold); }
+  .kpi-card.violet .kpi-icon { background: rgba(124,58,237,0.1);  color: var(--violet); }
+  .kpi-card.rose   .kpi-icon { background: rgba(244,63,94,0.1);   color: #f43f5e; }
+  .kpi-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem; font-weight: 800; color: var(--text-1); line-height: 1;
+  }
+  .kpi-lbl { font-size: 0.7rem; color: var(--text-3); margin-top: 3px; font-weight: 500; }
+  .kpi-sub { font-size: 0.65rem; color: var(--indigo); font-weight: 600; margin-top: 2px; }
+
+  /* ── CHART GRID ── */
+  .chart-grid-2 {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 18px; margin-bottom: 18px;
+  }
+  .chart-grid-3 {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px; margin-bottom: 18px;
+  }
+  .chart-grid-full {
+    margin-bottom: 18px;
+  }
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: var(--radius-xl);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-md);
+    position: relative; overflow: hidden;
+    transition: all var(--transition);
+  }
+  .chart-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.15), transparent);
+  }
+  .chart-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .chart-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .chart-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem; font-weight: 800; color: var(--text-1);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chart-title .ct-icon {
+    width: 26px; height: 26px; border-radius: 8px;
+    background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(124,58,237,0.1));
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--indigo);
+  }
+  .chart-subtitle { font-size: 0.68rem; color: var(--text-3); margin-top: 1px; font-weight: 400; }
+  .chart-wrap-sm  { position: relative; height: 200px; }
+  .chart-wrap-md  { position: relative; height: 260px; }
+  .chart-wrap-lg  { position: relative; height: 320px; }
+  .chart-wrap-xl  { position: relative; height: 220px; }
+
+  /* ── SNAPSHOT HISTORY ── */
+  .snapshot-section { margin-bottom: 18px; }
+  .snapshot-list {
+    display: flex; flex-direction: column; gap: 10px;
+    max-height: 340px; overflow-y: auto;
+    padding-right: 4px;
+  }
+  .snapshot-item {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--bg-card-2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 13px 16px;
+    transition: all var(--transition); position: relative; overflow: hidden;
+  }
+  .snapshot-item::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--blue), var(--violet));
+  }
+  .snapshot-item:hover { background: white; box-shadow: var(--shadow-sm); }
+  .snap-date {
+    font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 800;
+    color: var(--indigo); white-space: nowrap; min-width: 90px;
+  }
+  .snap-stats {
+    display: flex; gap: 16px; flex-wrap: wrap; flex: 1;
+  }
+  .snap-stat { display: flex; flex-direction: column; gap: 1px; }
+  .snap-stat-val {
+    font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 800; color: var(--text-1);
+  }
+  .snap-stat-lbl { font-size: 0.62rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; }
+  .snap-badge {
+    font-size: 0.62rem; font-weight: 700; padding: 3px 9px; border-radius: 99px;
+    background: rgba(99,102,241,0.08); color: var(--indigo);
+    border: 1px solid rgba(99,102,241,0.15); white-space: nowrap;
+  }
+
+  /* ── HEATMAP ── */
+  .heatmap-wrap { overflow-x: auto; }
+  .heatmap-grid {
+    display: grid; grid-template-columns: 60px repeat(7, 1fr);
+    gap: 4px; min-width: 560px;
+  }
+  .hm-label {
+    font-family: 'Syne', sans-serif; font-size: 0.6rem; font-weight: 700;
+    color: var(--text-3); display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .hm-day-label {
+    font-family: 'Syne', sans-serif; font-size: 0.6rem; font-weight: 700;
+    color: var(--text-3); text-align: center; padding: 4px 0;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .hm-cell {
+    height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 0.62rem; font-weight: 700;
+    color: white; transition: all var(--transition); cursor: default;
+    position: relative;
+  }
+  .hm-cell:hover { transform: scale(1.1); z-index: 2; }
+  .hm-cell[data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a; color: white;
+    font-size: 0.62rem; padding: 4px 8px; border-radius: 6px;
+    white-space: nowrap; z-index: 999; pointer-events: none;
+  }
+  .hm-0  { background: rgba(99,102,241,0.06); color: var(--text-3); }
+  .hm-1  { background: rgba(99,102,241,0.18); }
+  .hm-2  { background: rgba(99,102,241,0.32); }
+  .hm-3  { background: rgba(99,102,241,0.50); }
+  .hm-4  { background: rgba(99,102,241,0.68); }
+  .hm-5  { background: rgba(99,102,241,0.85); }
+
+  /* ── LEADERBOARD ── */
+  .leader-list { display: flex; flex-direction: column; gap: 8px; }
+  .leader-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 13px;
+    background: var(--bg-card-2); border: 1px solid var(--border);
+    border-radius: var(--radius-md); transition: all var(--transition);
+  }
+  .leader-row:hover { background: white; box-shadow: var(--shadow-sm); }
+  .leader-rank {
+    font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 800;
+    color: var(--text-3); width: 22px; text-align: center; flex-shrink: 0;
+  }
+  .leader-rank.top1 { color: var(--gold); font-size: 0.82rem; }
+  .leader-rank.top2 { color: var(--text-2); }
+  .leader-rank.top3 { color: #cd7c2f; }
+  .leader-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 0.62rem; font-weight: 800; color: white;
+    flex-shrink: 0;
+  }
+  .leader-name {
+    font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700;
+    color: var(--text-1); flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .leader-count {
+    font-family: 'Syne', sans-serif; font-size: 0.76rem; font-weight: 800;
+    color: var(--indigo);
+  }
+
+  /* ── DATE FILTER BAR ── */
+  .analytics-filter {
+    display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
+    background: var(--bg-card); border: 1px solid rgba(255,255,255,0.9);
+    border-radius: var(--radius-xl); padding: 16px 20px;
+    box-shadow: var(--shadow-sm); margin-bottom: 20px;
+  }
+  .af-group { display: flex; flex-direction: column; gap: 4px; }
+  .af-label {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-3);
+  }
+
+  /* ── SECTION DIVIDER ── */
+  .section-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 22px 0 16px;
+  }
+  .section-divider-title {
+    font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 800;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-3);
+    white-space: nowrap;
+  }
+  .section-divider-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  @media (max-width: 1100px) {
+    .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+    .chart-grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 768px) {
+    .kpi-strip { grid-template-columns: 1fr 1fr; }
+    .chart-grid-2, .chart-grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── DATE FILTER ── -->
+<form method="GET" action="{{ url_for('admin_analytics') }}">
+  <div class="analytics-filter">
+    <div class="af-group">
+      <label class="af-label">From</label>
+      <input type="date" name="date_from" class="form-input" style="max-width:160px;"
+        value="{{ date_from or '' }}">
+    </div>
+    <div class="af-group">
+      <label class="af-label">To</label>
+      <input type="date" name="date_to" class="form-input" style="max-width:160px;"
+        value="{{ date_to or '' }}">
+    </div>
+    <div class="af-group">
+      <label class="af-label">Lab Room</label>
+      <select name="lab_filter" class="form-input" style="max-width:150px;">
+        <option value="">All Labs</option>
+        {% for lab in ['Lab 524','Lab 526','Lab 528','Lab 530','Lab 542','Lab 544'] %}
+        <option value="{{ lab }}" {% if lab_filter == lab %}selected{% endif %}>{{ lab }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Apply Filter
+    </button>
+    <a href="{{ url_for('admin_analytics') }}" class="btn btn-danger">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+      Reset
+    </a>
+    {% if date_from or date_to or lab_filter %}
+    <span style="font-size:0.72rem; color:var(--indigo); font-weight:600; margin-left:4px;">
+      ● Filtered view — {{ total_sessions }} sessions
+    </span>
+    {% endif %}
+  </div>
+</form>
+
+<!-- ── KPI STRIP ── -->
+<div class="kpi-strip">
+  <div class="kpi-card blue">
+    <div class="kpi-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    </div>
+    <div>
+      <div class="kpi-val">{{ total_sessions }}</div>
+      <div class="kpi-lbl">Total Sit-In Sessions</div>
+      <div class="kpi-sub">All completed records</div>
+    </div>
+  </div>
+  <div class="kpi-card green">
+    <div class="kpi-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </div>
+    <div>
+      <div class="kpi-val">{{ unique_students }}</div>
+      <div class="kpi-lbl">Unique Students</div>
+      <div class="kpi-sub">Distinct sit-in users</div>
+    </div>
+  </div>
+  <div class="kpi-card gold">
+    <div class="kpi-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div>
+      <div class="kpi-val">{{ avg_duration }}</div>
+      <div class="kpi-lbl">Avg. Session (min)</div>
+      <div class="kpi-sub">Time in → time out</div>
+    </div>
+  </div>
+  <div class="kpi-card violet">
+    <div class="kpi-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </div>
+    <div>
+      <div class="kpi-val">{{ total_reservations }}</div>
+      <div class="kpi-lbl">Total Reservations</div>
+      <div class="kpi-sub">{{ approved_reservations }} approved</div>
+    </div>
+  </div>
+  <div class="kpi-card rose">
+    <div class="kpi-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <div>
+      <div class="kpi-val">{{ total_feedback }}</div>
+      <div class="kpi-lbl">Feedback Received</div>
+      <div class="kpi-sub">Student submissions</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 1: TREND LINE + PURPOSE PIE ── -->
+<div class="section-divider">
+  <span class="section-divider-title">Sit-In Trends</span>
+  <div class="section-divider-line"></div>
+</div>
+<div class="chart-grid-2">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">
+          <div class="ct-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          Daily Sessions — Last 30 Days
+        </div>
+        <div class="chart-subtitle">Area chart of completed sit-ins per day</div>
+      </div>
+    </div>
+    <div class="chart-wrap-lg"><canvas id="trendChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">
+          <div class="ct-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+          </div>
+          Sessions by Purpose
+        </div>
+        <div class="chart-subtitle">Distribution of sit-in purposes</div>
+      </div>
+    </div>
+    <div class="chart-wrap-lg"><canvas id="purposeChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ── ROW 2: LAB BAR + COURSE DONUT + HOURLY ── -->
+<div class="section-divider">
+  <span class="section-divider-title">Lab & Course Breakdown</span>
+  <div class="section-divider-line"></div>
+</div>
+<div class="chart-grid-3">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">
+          <div class="ct-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          Sessions by Lab Room
+        </div>
+        <div class="chart-subtitle">Horizontal bar chart</div>
+      </div>
+    </div>
+    <div class="chart-wrap-md"><canvas id="labChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">
+          <div class="ct-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          Sessions by Course
+        </div>
+        <div class="chart-subtitle">Donut chart</div>
+      </div>
+    </div>
+    <div class="chart-wrap-md"><canvas id="courseChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">
+          <div class="ct-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          Peak Hours
+        </div>
+        <div class="chart-subtitle">Sessions by hour of day</div>
+      </div>
+    </div>
+    <div class="chart-wrap-md"><canvas id="hourChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ── ROW 3: HEATMAP ── -->
+<div class="section-divider">
+  <span class="section-divider-title">Activity Heatmap</span>
+  <div class="section-divider-line"></div>
+</div>
+<div class="chart-grid-full">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">
+          <div class="ct-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </div>
+          Day × Hour Heatmap
+        </div>
+        <div class="chart-subtitle">Which hours of which days are busiest</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:0.62rem; color:var(--text-3);">Low</span>
+        <div style="display:flex; gap:3px;">
+          <div style="width:14px;height:14px;border-radius:4px;background:rgba(99,102,241,0.06);border:1px solid var(--border);"></div>
+          <div style="width:14px;height:14px;border-radius:4px;background:rgba(99,102,241,0.18);"></div>
+          <div style="width:14px;height:14px;border-radius:4px;background:rgba(99,102,241,0.35);"></div>
+          <div style="width:14px;height:14px;border-radius:4px;background:rgba(99,102,241,0.55);"></div>
+          <div style="width:14px;height:14px;border-radius:4px;background:rgba(99,102,241,0.75);"></div>
+          <div style="width:14px;height:14px;border-radius:4px;background:rgba(99,102,241,0.9);"></div>
+        </div>
+        <span style="font-size:0.62rem; color:var(--text-3);">High</span>
+      </div>
+    </div>
+    <div class="heatmap-wrap">
+      <div class="heatmap-grid" id="heatmapGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 4: WEEKLY BAR + RESERVATION PIE ── -->
+<div class="section-divider">
+  <span class="section-divider-title">Weekly & Reservation Insights</span>
+  <div class="section-divider-line"></div>
+</div>
+<div class="chart-grid-2">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">
+          <div class="ct-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          Sessions by Day of Week
+        </div>
+        <div class="chart-subtitle">Which days have the most sit-ins</div>
+      </div>
+    </div>
+    <div class="chart-wrap-md"><canvas id="weekdayChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">
+          <div class="ct-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          Reservation Status Breakdown
+        </div>
+        <div class="chart-subtitle">Pending / Approved / Rejected / Used</div>
+      </div>
+    </div>
+    <div class="chart-wrap-md"><canvas id="resStatusChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ── ROW 5: TOP STUDENTS + SNAPSHOT HISTORY ── -->
+<div class="section-divider">
+  <span class="section-divider-title">Top Students & Snapshot History</span>
+  <div class="section-divider-line"></div>
+</div>
+<div class="chart-grid-2">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">
+          <div class="ct-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          Top Students by Sessions
+        </div>
+        <div class="chart-subtitle">Most frequent sit-in users</div>
+      </div>
+    </div>
+    <div class="leader-list" id="leaderList"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">
+          <div class="ct-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          Snapshot History
+        </div>
+        <div class="chart-subtitle">Auto-saved stats before each session reset</div>
+      </div>
+    </div>
+    {% if snapshots %}
+    <div class="snapshot-list">
+      {% for snap in snapshots %}
+      <div class="snapshot-item">
+        <div class="snap-date">{{ snap.snapshot_date }}</div>
+        <div class="snap-stats">
+          <div class="snap-stat">
+            <span class="snap-stat-val">{{ snap.total_sessions }}</span>
+            <span class="snap-stat-lbl">Sessions</span>
+          </div>
+          <div class="snap-stat">
+            <span class="snap-stat-val">{{ snap.unique_students }}</span>
+            <span class="snap-stat-lbl">Students</span>
+          </div>
+          <div class="snap-stat">
+            <span class="snap-stat-val">{{ snap.total_feedback }}</span>
+            <span class="snap-stat-lbl">Feedback</span>
+          </div>
+        </div>
+        <span class="snap-badge">{{ snap.top_purpose or '—' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:36px 20px;">
+      <div class="empty-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </div>
+      <p>No snapshots yet</p>
+      <span>Snapshots are saved automatically when sessions are reset.</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // ── DATA FROM FLASK ──────────────────────────────────────────────────────
+  const TREND_LABELS   = {{ trend_labels   | tojson }};
+  const TREND_VALUES   = {{ trend_values   | tojson }};
+  const PURPOSE_DATA   = {{ purpose_data   | tojson }};
+  const LAB_DATA       = {{ lab_data       | tojson }};
+  const COURSE_DATA    = {{ course_data    | tojson }};
+  const HOUR_DATA      = {{ hour_data      | tojson }};
+  const WEEKDAY_DATA   = {{ weekday_data   | tojson }};
+  const RES_STATUS     = {{ res_status     | tojson }};
+  const HEATMAP_DATA   = {{ heatmap_data   | tojson }};
+  const TOP_STUDENTS   = {{ top_students   | tojson }};
+
+  // ── PALETTE ─────────────────────────────────────────────────────────────
+  const PAL = [
+    'rgba(99,102,241,0.82)','rgba(59,130,246,0.82)','rgba(16,185,129,0.82)',
+    'rgba(245,158,11,0.82)','rgba(239,68,68,0.82)', 'rgba(124,58,237,0.82)',
+    'rgba(14,165,233,0.82)','rgba(234,179,8,0.82)', 'rgba(244,63,94,0.82)',
+    'rgba(20,184,166,0.82)'
+  ];
+  const PAL_BORDER = PAL.map(c => c.replace('0.82','1'));
+
+  const FONT = { family: 'DM Sans' };
+  const LEGEND_OPTS = {
+    position: 'bottom',
+    labels: { font: { family: 'DM Sans', size: 11 }, padding: 10, boxWidth: 12 }
+  };
+
+  // ── 1. AREA TREND CHART ──────────────────────────────────────────────────
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: TREND_LABELS,
+      datasets: [{
+        label: 'Sessions',
+        data: TREND_VALUES,
+        borderColor: 'rgba(99,102,241,1)',
+        backgroundColor: 'rgba(99,102,241,0.10)',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.42,
+        pointBackgroundColor: 'rgba(99,102,241,1)',
+        pointRadius: 3,
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: FONT, color: '#94a3b8', maxTicksLimit: 10, maxRotation: 0 }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(99,102,241,0.06)' },
+          ticks: { font: FONT, color: '#94a3b8', stepSize: 1 }
+        }
+      }
+    }
+  });
+
+  // ── 2. PURPOSE PIE ───────────────────────────────────────────────────────
+  (function() {
+    const labels = Object.keys(PURPOSE_DATA);
+    const values = Object.values(PURPOSE_DATA);
+    if (!labels.length) return;
+    new Chart(document.getElementById('purposeChart'), {
+      type: 'pie',
+      data: {
+        labels,
+        datasets: [{ data: values, backgroundColor: PAL.slice(0,labels.length),
+          borderColor: PAL_BORDER.slice(0,labels.length), borderWidth: 1.5 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: LEGEND_OPTS }
+      }
+    });
+  })();
+
+  // ── 3. LAB HORIZONTAL BAR ────────────────────────────────────────────────
+  (function() {
+    const labels = Object.keys(LAB_DATA);
+    const values = Object.values(LAB_DATA);
+    if (!labels.length) return;
+    new Chart(document.getElementById('labChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Sessions',
+          data: values,
+          backgroundColor: PAL.slice(0,labels.length),
+          borderColor: PAL_BORDER.slice(0,labels.length),
+          borderWidth: 1.5,
+          borderRadius: 8,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, grid: { color: 'rgba(99,102,241,0.06)' },
+               ticks: { font: FONT, color: '#94a3b8', stepSize: 1 } },
+          y: { grid: { display: false }, ticks: { font: FONT, color: '#475569' } }
+        }
+      }
+    });
+  })();
+
+  // ── 4. COURSE DONUT ──────────────────────────────────────────────────────
+  (function() {
+    const labels = Object.keys(COURSE_DATA);
+    const values = Object.values(COURSE_DATA);
+    if (!labels.length) return;
+    new Chart(document.getElementById('courseChart'), {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{ data: values,
+          backgroundColor: PAL.slice(0,labels.length),
+          borderColor: PAL_BORDER.slice(0,labels.length),
+          borderWidth: 1.5 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: { legend: LEGEND_OPTS }
+      }
+    });
+  })();
+
+  // ── 5. PEAK HOURS BAR ────────────────────────────────────────────────────
+  (function() {
+    const hours  = Array.from({length:24}, (_,i) => i + ':00');
+    const values = Array.from({length:24}, (_,i) => HOUR_DATA[i] || 0);
+    new Chart(document.getElementById('hourChart'), {
+      type: 'bar',
+      data: {
+        labels: hours,
+        datasets: [{
+          label: 'Sessions',
+          data: values,
+          backgroundColor: values.map(v =>
+            v === Math.max(...values) ? 'rgba(245,158,11,0.85)' : 'rgba(99,102,241,0.55)'
+          ),
+          borderRadius: 5,
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false },
+               ticks: { font: { ...FONT, size: 9 }, color: '#94a3b8', maxRotation: 45 } },
+          y: { beginAtZero: true, grid: { color: 'rgba(99,102,241,0.06)' },
+               ticks: { font: FONT, color: '#94a3b8', stepSize: 1 } }
+        }
+      }
+    });
+  })();
+
+  // ── 6. WEEKDAY BAR ───────────────────────────────────────────────────────
+  (function() {
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const values = days.map(d => WEEKDAY_DATA[d] || 0);
+    new Chart(document.getElementById('weekdayChart'), {
+      type: 'bar',
+      data: {
+        labels: days.map(d => d.slice(0,3)),
+        datasets: [{
+          label: 'Sessions',
+          data: values,
+          backgroundColor: 'rgba(59,130,246,0.7)',
+          borderColor: 'rgba(59,130,246,1)',
+          borderWidth: 1.5,
+          borderRadius: 8,
+          hoverBackgroundColor: 'rgba(99,102,241,0.85)',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: FONT, color: '#475569' } },
+          y: { beginAtZero: true, grid: { color: 'rgba(99,102,241,0.06)' },
+               ticks: { font: FONT, color: '#94a3b8', stepSize: 1 } }
+        }
+      }
+    });
+  })();
+
+  // ── 7. RESERVATION STATUS PIE ────────────────────────────────────────────
+  (function() {
+    const labels = Object.keys(RES_STATUS);
+    const values = Object.values(RES_STATUS);
+    if (!labels.length) return;
+    const colors = {
+      pending:  'rgba(245,158,11,0.8)',
+      approved: 'rgba(16,185,129,0.8)',
+      rejected: 'rgba(239,68,68,0.8)',
+      used:     'rgba(99,102,241,0.8)'
+    };
+    new Chart(document.getElementById('resStatusChart'), {
+      type: 'doughnut',
+      data: {
+        labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+        datasets: [{
+          data: values,
+          backgroundColor: labels.map(l => colors[l] || 'rgba(148,163,184,0.7)'),
+          borderWidth: 1.5
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '58%',
+        plugins: { legend: LEGEND_OPTS }
+      }
+    });
+  })();
+
+  // ── 8. HEATMAP ───────────────────────────────────────────────────────────
+  (function() {
+    const days  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const hours = [7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+    const grid  = document.getElementById('heatmapGrid');
+
+    // Find max for normalising
+    let maxVal = 1;
+    hours.forEach(h => days.forEach(d => {
+      const v = (HEATMAP_DATA[d] && HEATMAP_DATA[d][h]) || 0;
+      if (v > maxVal) maxVal = v;
+    }));
+
+    // Header row
+    grid.innerHTML += `<div class="hm-label"></div>`;
+    days.forEach(d => { grid.innerHTML += `<div class="hm-day-label">${d}</div>`; });
+
+    // Data rows
+    hours.forEach(h => {
+      grid.innerHTML += `<div class="hm-label">${h}:00</div>`;
+      days.forEach(d => {
+        const v    = (HEATMAP_DATA[d] && HEATMAP_DATA[d][h]) || 0;
+        const tier = v === 0 ? 0 : Math.ceil((v / maxVal) * 5);
+        grid.innerHTML += `<div class="hm-cell hm-${tier}"
+          data-tip="${d} ${h}:00 — ${v} session${v !== 1 ? 's' : ''}"
+        >${v > 0 ? v : ''}</div>`;
+      });
+    });
+  })();
+
+  // ── 9. TOP STUDENTS LEADERBOARD ──────────────────────────────────────────
+  (function() {
+    const list  = document.getElementById('leaderList');
+    const ranks = ['🥇','🥈','🥉'];
+    if (!TOP_STUDENTS.length) {
+      list.innerHTML = `<div class="empty-state" style="padding:36px 20px;"><p>No data yet</p></div>`;
+      return;
+    }
+    TOP_STUDENTS.slice(0,8).forEach((s, i) => {
+      const initials = (s.firstname[0] + s.lastname[0]).toUpperCase();
+      list.innerHTML += `
+        <div class="leader-row">
+          <div class="leader-rank ${i===0?'top1':i===1?'top2':i===2?'top3':''}">${i < 3 ? ranks[i] : i+1}</div>
+          <div class="leader-avatar">${initials}</div>
+          <span class="leader-name">${s.lastname}, ${s.firstname}</span>
+          <span style="font-size:0.68rem; color:var(--text-3); margin-right:4px;">${s.course || ''}</span>
+          <span class="leader-count">${s.session_count} sessions</span>
+        </div>`;
+    });
+  })();
+</script>
+{% endblock %}

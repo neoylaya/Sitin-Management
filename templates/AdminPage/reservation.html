@@ -1,0 +1,653 @@
+{% extends "AdminPage/layout.html" %}
+{% block title %}Reservation{% endblock %}
+{% block page_title %}Reservation Management{% endblock %}
+{% block breadcrumb_current %}Reservation{% endblock %}
+
+{% block extra_head %}
+<style>
+  .res-tabs {
+    display:flex; gap:4px; margin-bottom:20px;
+    background:var(--bg-card-2); border-radius:var(--radius-lg);
+    padding:5px; border:1px solid var(--border); width:fit-content;
+  }
+  .res-tab {
+    display:flex; align-items:center; gap:7px;
+    font-family:'Syne',sans-serif; font-size:0.78rem; font-weight:700;
+    padding:8px 18px; border-radius:var(--radius-md);
+    cursor:pointer; transition:all var(--transition);
+    color:var(--text-2); border:none; background:none;
+  }
+  .res-tab:hover { color:var(--text-1); background:rgba(99,102,241,0.07); }
+  .res-tab.active {
+    background:linear-gradient(135deg,var(--blue),var(--violet));
+    color:white; box-shadow:0 3px 10px rgba(99,102,241,0.3);
+  }
+  .tab-count {
+    font-size:0.62rem; font-weight:800; padding:1px 6px; border-radius:99px;
+    background:rgba(255,255,255,0.25); color:white;
+  }
+  .res-tab:not(.active) .tab-count { background:rgba(99,102,241,0.1); color:var(--indigo); }
+  .tab-pane { display:none; }
+  .tab-pane.active { display:block; }
+
+  .toggle-banner {
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; flex-wrap:wrap;
+    padding:16px 20px; border-radius:var(--radius-lg);
+    margin-bottom:20px; border:1.5px solid;
+  }
+  .toggle-banner.open   { background:rgba(16,185,129,0.07); border-color:rgba(16,185,129,0.25); }
+  .toggle-banner.closed { background:rgba(239,68,68,0.07);  border-color:rgba(239,68,68,0.2); }
+  .toggle-status { display:flex; align-items:center; gap:10px; }
+  .status-pill {
+    display:flex; align-items:center; gap:7px;
+    padding:6px 14px; border-radius:99px;
+    font-family:'Syne',sans-serif; font-size:0.78rem; font-weight:700;
+  }
+  .status-pill.open   { background:rgba(16,185,129,0.15); color:var(--success); }
+  .status-pill.closed { background:rgba(239,68,68,0.1);   color:var(--danger); }
+  .status-dot { width:8px; height:8px; border-radius:50%; }
+  .status-dot.open   { background:var(--success); box-shadow:0 0 0 3px rgba(16,185,129,0.2); }
+  .status-dot.closed { background:var(--danger); }
+  .toggle-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .disable-msg-input {
+    padding:7px 13px; border:1.5px solid var(--border);
+    background:var(--bg-card-2); border-radius:var(--radius-md);
+    font-family:'DM Sans',sans-serif; font-size:0.82rem; color:var(--text-1);
+    outline:none; transition:all var(--transition); min-width:280px;
+  }
+  .disable-msg-input:focus { border-color:var(--indigo); background:white; box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
+
+  .admin-pc-grid-wrap {
+    background:var(--bg-card-2); border:1px solid var(--border);
+    border-radius:var(--radius-xl); padding:20px;
+  }
+  .pc-grid-admin { display:grid; grid-template-columns:repeat(10,1fr); gap:8px; }
+  .admin-pc-item {
+    aspect-ratio:1; border-radius:var(--radius-md);
+    border:1.5px solid rgba(16,185,129,0.35);
+    background:rgba(16,185,129,0.07);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    cursor:pointer; transition:all var(--transition);
+    position:relative; gap:2px; min-height:52px;
+  }
+  .admin-pc-item:hover:not(.unavailable) { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+  .admin-pc-item.unavailable { background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.3); }
+  .admin-pc-item svg { width:18px; height:18px; }
+  .admin-pc-item:not(.unavailable) svg { color:var(--success); }
+  .admin-pc-item.unavailable svg { color:var(--danger); }
+  .admin-pc-num { font-family:'Syne',sans-serif; font-size:0.6rem; font-weight:700; color:var(--text-3); }
+  .admin-pc-item.unavailable .admin-pc-num { color:var(--danger); }
+  .admin-pc-item[data-tip]:hover::after {
+    content:attr(data-tip);
+    position:absolute; bottom:calc(100% + 6px); left:50%;
+    transform:translateX(-50%);
+    background:#0f172a; color:white;
+    font-size:0.62rem; font-weight:600;
+    padding:4px 8px; border-radius:6px;
+    white-space:nowrap; z-index:999; pointer-events:none;
+  }
+  .admin-lab-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .admin-lab-btn {
+    font-family:'Syne',sans-serif; font-size:0.72rem; font-weight:700;
+    padding:6px 14px; border-radius:var(--radius-md);
+    border:1.5px solid var(--border); background:var(--bg-card);
+    color:var(--text-2); cursor:pointer; transition:all var(--transition);
+  }
+  .admin-lab-btn:hover { border-color:var(--indigo); color:var(--indigo); }
+  .admin-lab-btn.active {
+    background:linear-gradient(135deg,var(--blue),var(--violet));
+    color:white; border-color:transparent;
+    box-shadow:0 3px 10px rgba(99,102,241,0.3);
+  }
+  .admin-pc-legend { display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+  .pc-legend-item { display:flex; align-items:center; gap:5px; font-size:0.68rem; color:var(--text-2); font-weight:500; }
+  .legend-dot { width:12px; height:12px; border-radius:4px; }
+  .legend-available  { background:rgba(16,185,129,0.15); border:1.5px solid rgba(16,185,129,0.4); }
+  .legend-unavailable{ background:rgba(239,68,68,0.1); border:1.5px solid rgba(239,68,68,0.3); }
+
+  .req-card {
+    background:var(--bg-card-2); border:1px solid var(--border);
+    border-radius:var(--radius-lg); padding:16px 18px;
+    display:flex; align-items:center; gap:16px;
+    transition:all var(--transition); margin-bottom:10px;
+    position:relative; overflow:hidden;
+  }
+  .req-card::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg,var(--gold),#f97316);
+  }
+  .req-card:hover { background:white; box-shadow:var(--shadow-sm); }
+  .req-info { flex:1; min-width:0; }
+  .req-student { font-family:'Syne',sans-serif; font-size:0.88rem; font-weight:800; color:var(--text-1); margin-bottom:4px; }
+  .req-meta { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .req-actions { display:flex; gap:8px; flex-shrink:0; }
+
+  .status-pending  { background:rgba(245,158,11,0.1);  color:var(--gold);    border:1px solid rgba(245,158,11,0.25); }
+  .status-approved { background:rgba(16,185,129,0.1);  color:var(--success); border:1px solid rgba(16,185,129,0.25); }
+  .status-rejected { background:rgba(239,68,68,0.1);   color:var(--danger);  border:1px solid rgba(239,68,68,0.25); }
+  .status-used     { background:rgba(99,102,241,0.1);  color:var(--indigo);  border:1px solid rgba(99,102,241,0.25); }
+
+  /* Sit-In button */
+  .btn-sitin {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:5px 12px; border-radius:var(--radius-md);
+    font-family:'Syne',sans-serif; font-size:0.7rem; font-weight:700;
+    background:linear-gradient(135deg,var(--blue),var(--violet));
+    color:white; border:none; cursor:pointer;
+    box-shadow:0 2px 8px rgba(99,102,241,0.3);
+    transition:all var(--transition); white-space:nowrap;
+  }
+  .btn-sitin:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(99,102,241,0.4); }
+
+  .tip-manage-item {
+    display:flex; align-items:center; gap:12px; padding:11px 14px;
+    background:var(--bg-card-2); border:1px solid var(--border);
+    border-radius:var(--radius-md); margin-bottom:8px;
+    transition:all var(--transition);
+  }
+  .tip-manage-item:hover { background:white; box-shadow:var(--shadow-sm); }
+
+  .log-badge-approved { background:rgba(16,185,129,0.1); color:var(--success); border:1px solid rgba(16,185,129,0.25); }
+  .log-badge-rejected { background:rgba(239,68,68,0.1);  color:var(--danger);  border:1px solid rgba(239,68,68,0.25); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="toggle-banner {% if reservations_open %}open{% else %}closed{% endif %}">
+  <div class="toggle-status">
+    <div class="status-pill {% if reservations_open %}open{% else %}closed{% endif %}">
+      <span class="status-dot {% if reservations_open %}open{% else %}closed{% endif %}"></span>
+      Reservations are {% if reservations_open %}OPEN{% else %}CLOSED{% endif %}
+    </div>
+    {% if not reservations_open and reservations_closed_msg %}
+    <span style="font-size:0.78rem; color:var(--text-2);">— {{ reservations_closed_msg }}</span>
+    {% endif %}
+  </div>
+  <div class="toggle-actions">
+    <form method="POST" action="{{ url_for('admin_reservation_toggle') }}" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <input type="text" name="disable_message" class="disable-msg-input"
+        placeholder="Disable message shown to students (e.g. Closed for Major Exams Week)"
+        value="{{ reservations_closed_msg or '' }}">
+      {% if reservations_open %}
+      <input type="hidden" name="action" value="disable">
+      <button type="submit" class="btn btn-danger btn-sm">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        Disable
+      </button>
+      {% else %}
+      <input type="hidden" name="action" value="enable">
+      <button type="submit" class="btn btn-success btn-sm">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Enable
+      </button>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="res-tabs">
+  <button class="res-tab active" onclick="switchTab('status', this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    Reservation Status
+  </button>
+  <button class="res-tab" onclick="switchTab('requests', this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Reservation Requests
+    <span class="tab-count">{{ pending_count }}</span>
+  </button>
+  <button class="res-tab" onclick="switchTab('tips', this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Tips
+  </button>
+  <button class="res-tab" onclick="switchTab('logs', this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Log / History
+  </button>
+</div>
+
+<!-- TAB 1: STATUS -->
+<div class="tab-pane active" id="tab-status">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <h3>PC Availability Management</h3>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-2); margin-bottom:16px; line-height:1.6;">
+      Click a PC to toggle it as <strong>unavailable</strong> (blocked) or <strong>available</strong>.
+    </p>
+    <div class="admin-lab-tabs" id="adminLabTabs">
+      {% for lab in ['Lab 524','Lab 526','Lab 528','Lab 530','Lab 542','Lab 544'] %}
+      <button type="button" class="admin-lab-btn {% if loop.first %}active{% endif %}"
+        onclick="adminSelectLab(this, '{{ lab }}')">{{ lab }}</button>
+      {% endfor %}
+    </div>
+    <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px;">
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <label style="font-size:0.62rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-3);">Date</label>
+        <input type="date" id="adminDateFilter" class="form-input" value="{{ today }}" onchange="renderAdminGrid()" style="max-width:180px;">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <label style="font-size:0.62rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-3);">Time Slot</label>
+        <select id="adminSlotFilter" class="form-input" onchange="renderAdminGrid()" style="max-width:180px;">
+          <option value="">All Time Slots</option>
+          <option value="07:00 – 09:00">07:00 – 09:00</option>
+          <option value="09:00 – 11:00">09:00 – 11:00</option>
+          <option value="11:00 – 13:00">11:00 – 13:00</option>
+          <option value="13:00 – 15:00">13:00 – 15:00</option>
+          <option value="15:00 – 17:00">15:00 – 17:00</option>
+          <option value="17:00 – 19:00">17:00 – 19:00</option>
+          <option value="19:00 – 21:00">19:00 – 21:00</option>
+        </select>
+      </div>
+    </div>
+    <div class="admin-pc-legend" style="margin-bottom:14px;">
+      <div class="pc-legend-item"><div class="legend-dot legend-available"></div>Available</div>
+      <div class="pc-legend-item"><div class="legend-dot legend-unavailable"></div>Blocked</div>
+    </div>
+    <div class="admin-pc-grid-wrap">
+      <div class="pc-grid-admin" id="adminPcGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: REQUESTS -->
+<div class="tab-pane" id="tab-requests">
+  <div class="panel" style="margin-bottom:20px;">
+    <div class="panel-header">
+      <div class="panel-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <h3>Pending Requests</h3>
+    </div>
+    {% if pending_reservations %}
+      {% for r in pending_reservations %}
+      <div class="req-card">
+        <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--violet));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:800;color:white;flex-shrink:0;">
+          {{ r.firstname[0] }}{{ r.lastname[0] }}
+        </div>
+        <div class="req-info">
+          <div class="req-student">{{ r.lastname }}, {{ r.firstname }}
+            <span style="font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:400;color:var(--text-3);margin-left:6px;">{{ r.student_id }}</span>
+          </div>
+          <div class="req-meta">
+            <span class="badge badge-gold">{{ r.lab_room }}</span>
+            <span class="badge badge-blue">{{ r.pc_number or '—' }}</span>
+            <span class="badge badge-violet">{{ r.purpose }}</span>
+            <span style="font-size:0.72rem;color:var(--text-2);">📅 {{ r.date }}</span>
+            <span style="font-size:0.72rem;color:var(--text-2);">🕐 {{ r.time_slot }}</span>
+          </div>
+        </div>
+        <div class="req-actions">
+          <form method="POST" action="{{ url_for('admin_reservation_action', res_id=r.id) }}" style="display:inline;">
+            <input type="hidden" name="action" value="approve">
+            <input type="hidden" name="remarks" value="Reservation approved.">
+            <button type="button" class="btn btn-success btn-sm"
+  onclick="approveReservation({{ r.id }}, '{{ r.firstname }} {{ r.lastname }}', this)">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  Approve
+</button>
+          </form>
+          <button type="button" class="btn btn-danger btn-sm"
+            onclick="openReject({{ r.id }}, '{{ r.firstname }} {{ r.lastname }}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Reject
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state" style="padding:40px 20px;">
+      <div class="empty-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <p>No pending requests</p>
+      <span>All reservation requests have been processed.</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- All Reservations -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>
+      </div>
+      <h3>All Reservations</h3>
+    </div>
+    <div class="table-toolbar">
+      <div class="search-input-wrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="resSearch" placeholder="Search reservations..." oninput="filterRes()">
+      </div>
+    </div>
+    {% if all_reservations %}
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="resTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Student</th><th>Lab</th><th>PC</th><th>Date</th>
+            <th>Time Slot</th><th>Purpose</th><th>Status</th><th>Remarks</th><th>Action</th>
+          <tr>
+        </thead>
+        <tbody>
+          {% for r in all_reservations %}
+          <tr data-res-id="{{ r.id }}">
+            <td style="color:var(--text-3);font-size:0.75rem;">{{ loop.index }}</td>
+            <td>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.82rem;">{{ r.lastname }}, {{ r.firstname }}</div>
+              <div style="font-size:0.7rem;color:var(--text-3);">{{ r.student_id }}</div>
+            </td>
+            <td><span class="badge badge-gold">{{ r.lab_room }}</span></td>
+            <td style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;">{{ r.pc_number or '—' }}</td>
+            <td style="font-size:0.78rem;color:var(--text-2);white-space:nowrap;">{{ r.date }}</td>
+            <td style="font-size:0.76rem;color:var(--text-2);white-space:nowrap;">{{ r.time_slot }}</td>
+            <td><span class="badge badge-violet">{{ r.purpose }}</span></td>
+            <td>
+              {% if r.status=='pending' %}<span class="badge status-pending">⏳ Pending</span>
+              {% elif r.status=='approved' %}<span class="badge status-approved">✅ Approved</span>
+              {% elif r.status=='used' %}<span class="badge status-used">🖥️ Sat In</span>
+              {% else %}<span class="badge status-rejected">❌ Rejected</span>{% endif %}
+            </td>
+            <td style="font-size:0.74rem;color:var(--text-3);">{{ r.admin_remarks or '—' }}</td>
+            <td>
+              {% if r.status == 'approved' %}
+              <form method="POST" action="{{ url_for('admin_reservation_sitin', res_id=r.id) }}" style="display:inline;">
+                <button type="submit" class="btn-sitin"
+                  onclick="return confirm('Sit in {{ r.firstname }} {{ r.lastname }} now?')">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  Sit-In
+                </button>
+              </form>
+              {% else %}
+              <span style="font-size:0.72rem;color:var(--text-3);">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:36px 20px;"><p>No reservations yet.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- TAB 3: TIPS -->
+<div class="tab-pane" id="tab-tips">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h3>Post a Tip</h3>
+      </div>
+      <form method="POST" action="{{ url_for('admin_post_tip') }}">
+        <div class="form-group">
+          <label class="form-label">Icon / Emoji</label>
+          <input type="text" name="icon" class="form-input" placeholder="💡" maxlength="4" value="💡">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tip Message <span style="color:var(--danger)">*</span></label>
+          <textarea name="message" class="form-textarea" required
+            placeholder="e.g. 🕐 Best time: Tuesday & Thursday 2PM–4PM — labs are less crowded!"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Post Tip
+        </button>
+      </form>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>
+        </div>
+        <h3>Active Tips</h3>
+      </div>
+      {% if tips %}
+        {% for tip in tips %}
+        <div class="tip-manage-item">
+          <span style="font-size:1.2rem;">{{ tip.icon or '📌' }}</span>
+          <span style="flex:1;font-size:0.8rem;color:var(--text-2);line-height:1.5;">{{ tip.message }}</span>
+          <form method="POST" action="{{ url_for('admin_delete_tip', tip_id=tip.id) }}">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this tip?')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="empty-state" style="padding:36px 20px;"><p>No tips yet.</p><span>Post tips to guide students.</span></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: LOGS -->
+<div class="tab-pane" id="tab-logs">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </div>
+      <h3>Reservation Action Logs</h3>
+    </div>
+    {% if logs %}
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr><th>Date/Time</th><th>Student</th><th>Lab</th><th>PC</th><th>Slot</th><th>Action</th><th>Remarks</th><th>By</th></tr>
+        </thead>
+        <tbody>
+          {% for l in logs %}
+          <tr>
+            <td style="font-size:0.74rem;color:var(--text-2);white-space:nowrap;">{{ l.action_at }}</td>
+            <td>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;">{{ l.lastname }}, {{ l.firstname }}</div>
+              <div style="font-size:0.7rem;color:var(--text-3);">{{ l.student_id }}</div>
+            </td>
+            <td><span class="badge badge-gold">{{ l.lab_room }}</span></td>
+            <td style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;">{{ l.pc_number or '—' }}</td>
+            <td style="font-size:0.74rem;color:var(--text-2);white-space:nowrap;">{{ l.date }}<br>{{ l.time_slot }}</td>
+            <td>
+              <span class="badge {{ 'log-badge-approved' if l.action=='approved' else 'log-badge-rejected' }}">
+                {{ '✅ Approved' if l.action=='approved' else '❌ Rejected' }}
+              </span>
+            </td>
+            <td style="font-size:0.74rem;color:var(--text-3);">{{ l.remarks or '—' }}</td>
+            <td style="font-size:0.72rem;color:var(--text-3);">{{ l.processed_by }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:40px 20px;"><p>No logs yet.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectOverlay" onclick="handleOverlay(event)">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="panel-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <h3>Reject Reservation</h3>
+      <button class="modal-close" onclick="closeReject()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form method="POST" id="rejectForm">
+      <input type="hidden" name="action" value="reject">
+      <p style="font-size:0.82rem;color:var(--text-2);margin-bottom:14px;">
+        Rejecting reservation for <strong id="rejectName"></strong>. Provide a reason:
+      </p>
+      <div class="form-group">
+        <label class="form-label">Reason <span style="color:var(--danger)">*</span></label>
+        <textarea name="remarks" class="form-textarea" placeholder="e.g. Lab is under maintenance on this date..." required></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success btn-sm" onclick="closeReject()">Cancel</button>
+        <button type="submit" class="btn btn-danger">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Confirm Rejection
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const UNAVAILABLE_PCS = {{ unavailable_pcs | tojson }};
+  let adminCurrentLab = 'Lab 524';
+  const PC_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`;
+
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.res-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function adminSelectLab(btn, lab) {
+    document.querySelectorAll('.admin-lab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    adminCurrentLab = lab;
+    renderAdminGrid();
+  }
+
+  function renderAdminGrid() {
+    const grid        = document.getElementById('adminPcGrid');
+    const unavailList = UNAVAILABLE_PCS[adminCurrentLab] || [];
+    let html = '';
+    for (let i = 1; i <= 40; i++) {
+      const isUnavail = unavailList.includes(i);
+      const cls = 'admin-pc-item' + (isUnavail ? ' unavailable' : '');
+      const tip = isUnavail ? `PC ${i} — Blocked (click to unblock)` : `PC ${i} — Available (click to block)`;
+      html += `<form method="POST" action="/admin/pc/toggle" style="display:contents;">
+        <input type="hidden" name="lab_room" value="${adminCurrentLab}">
+        <input type="hidden" name="pc_number" value="${i}">
+        <input type="hidden" name="action" value="${isUnavail ? 'unblock' : 'block'}">
+        <button type="submit" class="${cls}" data-tip="${tip}">
+          ${PC_ICON}
+          <span class="admin-pc-num">${i}</span>
+        </button>
+      </form>`;
+    }
+    grid.innerHTML = html;
+  }
+
+  function openReject(id, name) {
+    document.getElementById('rejectForm').action = '/admin/reservation/' + id + '/action';
+    document.getElementById('rejectName').textContent = name;
+    document.getElementById('rejectOverlay').classList.add('open');
+  }
+  function closeReject() { document.getElementById('rejectOverlay').classList.remove('open'); }
+  function handleOverlay(e) { if (e.target === document.getElementById('rejectOverlay')) closeReject(); }
+
+  function filterRes() {
+    const q = document.getElementById('resSearch').value.toLowerCase();
+    document.querySelectorAll('#resTable tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+
+  window.addEventListener('load', renderAdminGrid);
+  
+  async function approveReservation(id, name, btn) {
+  if (!confirm('Approve ' + name + '\'s reservation?')) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Approving…';
+
+  const formData = new FormData();
+  formData.append('action', 'approve');
+  formData.append('remarks', 'Reservation approved.');
+
+  try {
+    const res  = await fetch('/admin/reservation/' + id + '/action', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (data.ok) {
+      // Remove the pending card
+      const card = btn.closest('.req-card');
+      card.style.transition = 'opacity 0.3s, transform 0.3s';
+      card.style.opacity    = '0';
+      card.style.transform  = 'translateX(20px)';
+      setTimeout(() => card.remove(), 300);
+
+      // Update pending count badge on the tab
+      const badge = document.querySelector('.res-tab .tab-count');
+      if (badge) badge.textContent = data.pending_count;
+
+      // Update status cell in the All Reservations table
+      const rows = document.querySelectorAll('#resTable tbody tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        // Match by student_id shown in the sub-line of the Student column
+        if (cells[1] && cells[1].textContent.includes(String(id))) return; // id not in student col
+        // Better: find the row whose status is Pending and matches — just update all pending rows
+        // matching this res_id isn't directly available in DOM, so we reload the table cell via status badge
+      });
+
+      // Simplest reliable approach: update the status badge in the table for this reservation
+      // We mark the correct row by adding data-res-id to each <tr>
+      const tableRow = document.querySelector(`#resTable tbody tr[data-res-id="${id}"]`);
+      if (tableRow) {
+        const statusCell = tableRow.querySelector('.badge.status-pending');
+        if (statusCell) {
+          statusCell.className = 'badge status-approved';
+          statusCell.textContent = '✅ Approved';
+        }
+        // Show Sit-In button in action cell
+        const actionCell = tableRow.querySelector('td:last-child');
+        if (actionCell) {
+          actionCell.innerHTML = `
+            <form method="POST" action="/admin/reservation/${id}/sitin" style="display:inline;">
+              <button type="submit" class="btn-sitin"
+                onclick="return confirm('Sit in now?')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Sit-In
+              </button>
+            </form>`;
+        }
+      }
+
+      // Show empty state if no more pending cards
+      const remaining = document.querySelectorAll('.req-card');
+      if (remaining.length === 0) {
+        const container = document.querySelector('#tab-requests .panel:first-child');
+        const header    = container.querySelector('.panel-header');
+        header.insertAdjacentHTML('afterend', `
+          <div class="empty-state" style="padding:40px 20px;">
+            <div class="empty-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <p>No pending requests</p>
+            <span>All reservation requests have been processed.</span>
+          </div>`);
+      }
+    } else {
+      alert('Error: ' + (data.error || 'Something went wrong.'));
+      btn.disabled    = false;
+      btn.textContent = 'Approve';
+    }
+  } catch (err) {
+    alert('Network error. Please try again.');
+    btn.disabled    = false;
+    btn.textContent = 'Approve';
+  }
+}
+</script>
+{% endblock %}

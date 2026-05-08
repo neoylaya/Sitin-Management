@@ -1,0 +1,144 @@
+{% extends "AdminPage/layout.html" %}
+{% block title %}Edit Student{% endblock %}
+{% block page_title %}Edit Student{% endblock %}
+{% block breadcrumb_current %}Edit Student{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 700px;">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <h3>Edit Student — {{ student.student_id }}</h3>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin_edit_student', student_id=student.student_id) }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">First Name <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="firstname" class="form-input" value="{{ student.firstname }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="lastname" class="form-input" value="{{ student.lastname }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Middle Name</label>
+          <input type="text" name="middlename" class="form-input" value="{{ student.middlename or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-input" value="{{ student.email or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Course</label>
+          <select name="course" class="form-input">
+            <option value="">Select course</option>
+            <optgroup label="🖥️ College of Computer Studies">
+              <option value="BSIT"        {% if student.course == 'BSIT'        %}selected{% endif %}>BS Information Technology</option>
+              <option value="BSCS"        {% if student.course == 'BSCS'        %}selected{% endif %}>BS Computer Science</option>
+            </optgroup>
+            <optgroup label="💼 College of Business and Accountancy">
+              <option value="BSA"         {% if student.course == 'BSA'         %}selected{% endif %}>BS Accountancy</option>
+              <option value="BSBA-FM"     {% if student.course == 'BSBA-FM'     %}selected{% endif %}>BSBA - Financial Management</option>
+              <option value="BSBA-MM"     {% if student.course == 'BSBA-MM'     %}selected{% endif %}>BSBA - Marketing Management</option>
+              <option value="BSBA-HRM"    {% if student.course == 'BSBA-HRM'    %}selected{% endif %}>BSBA - Human Resource Management</option>
+              <option value="BSBA-OM"     {% if student.course == 'BSBA-OM'     %}selected{% endif %}>BSBA - Operations Management</option>
+              <option value="BSMA"        {% if student.course == 'BSMA'        %}selected{% endif %}>BS Management Accounting</option>
+              <option value="BSEntrep"    {% if student.course == 'BSEntrep'    %}selected{% endif %}>BS Entrepreneurship</option>
+            </optgroup>
+            <optgroup label="⚙️ College of Engineering">
+              <option value="BSCE"        {% if student.course == 'BSCE'        %}selected{% endif %}>BS Civil Engineering</option>
+              <option value="BSEE"        {% if student.course == 'BSEE'        %}selected{% endif %}>BS Electrical Engineering</option>
+              <option value="BSME"        {% if student.course == 'BSME'        %}selected{% endif %}>BS Mechanical Engineering</option>
+              <option value="BSIE"        {% if student.course == 'BSIE'        %}selected{% endif %}>BS Industrial Engineering</option>
+              <option value="BSECE"       {% if student.course == 'BSECE'       %}selected{% endif %}>BS Electronics Engineering</option>
+            </optgroup>
+            <optgroup label="📚 College of Education">
+              <option value="BEED"        {% if student.course == 'BEED'        %}selected{% endif %}>Bachelor of Elementary Education</option>
+              <option value="BSED-ENG"    {% if student.course == 'BSED-ENG'    %}selected{% endif %}>BSED - English</option>
+              <option value="BSED-MATH"   {% if student.course == 'BSED-MATH'   %}selected{% endif %}>BSED - Mathematics</option>
+              <option value="BSED-SCI"    {% if student.course == 'BSED-SCI'    %}selected{% endif %}>BSED - Science</option>
+              <option value="BSED-FIL"    {% if student.course == 'BSED-FIL'    %}selected{% endif %}>BSED - Filipino</option>
+              <option value="BSED-SOSHIL" {% if student.course == 'BSED-SOSHIL' %}selected{% endif %}>BSED - Social Studies</option>
+              <option value="BPED"        {% if student.course == 'BPED'        %}selected{% endif %}>BS Physical Education</option>
+            </optgroup>
+            <optgroup label="🏥 College of Nursing">
+              <option value="BSN"         {% if student.course == 'BSN'         %}selected{% endif %}>BS Nursing</option>
+            </optgroup>
+            <optgroup label="🎨 College of Arts and Sciences">
+              <option value="ABCOM"       {% if student.course == 'ABCOM'       %}selected{% endif %}>AB Communication</option>
+              <option value="ABPOLSCI"    {% if student.course == 'ABPOLSCI'    %}selected{% endif %}>AB Political Science</option>
+              <option value="BSPSY"       {% if student.course == 'BSPSY'       %}selected{% endif %}>BS Psychology</option>
+              <option value="BSBIO"       {% if student.course == 'BSBIO'       %}selected{% endif %}>BS Biology</option>
+              <option value="BSMATH"      {% if student.course == 'BSMATH'      %}selected{% endif %}>BS Mathematics</option>
+            </optgroup>
+            <optgroup label="🏛️ College of Architecture and Fine Arts">
+              <option value="BSARCH"      {% if student.course == 'BSARCH'      %}selected{% endif %}>BS Architecture</option>
+              <option value="BSID"        {% if student.course == 'BSID'        %}selected{% endif %}>BS Interior Design</option>
+              <option value="BSFA"        {% if student.course == 'BSFA'        %}selected{% endif %}>BS Fine Arts</option>
+            </optgroup>
+            <optgroup label="🏨 College of Tourism and Hospitality Management">
+              <option value="BSTM"        {% if student.course == 'BSTM'        %}selected{% endif %}>BS Tourism Management</option>
+              <option value="BSHM"        {% if student.course == 'BSHM'        %}selected{% endif %}>BS Hospitality Management</option>
+            </optgroup>
+            <optgroup label="⚖️ College of Criminal Justice Education">
+              <option value="BSCRIM"      {% if student.course == 'BSCRIM'      %}selected{% endif %}>BS Criminology</option>
+            </optgroup>
+            <optgroup label="💊 College of Pharmacy">
+              <option value="BSPHAR"      {% if student.course == 'BSPHAR'      %}selected{% endif %}>BS Pharmacy</option>
+            </optgroup>
+            <optgroup label="⚓ College of Maritime Education">
+              <option value="BSMARE"      {% if student.course == 'BSMARE'      %}selected{% endif %}>BS Marine Engineering</option>
+              <option value="BSMT"        {% if student.course == 'BSMT'        %}selected{% endif %}>BS Marine Transportation</option>
+            </optgroup>
+            <optgroup label="⚕️ College of Allied Medical Sciences">
+              <option value="BSMT-MED"    {% if student.course == 'BSMT-MED'    %}selected{% endif %}>BS Medical Technology</option>
+              <option value="BSRT"        {% if student.course == 'BSRT'        %}selected{% endif %}>BS Radiologic Technology</option>
+              <option value="BSOT"        {% if student.course == 'BSOT'        %}selected{% endif %}>BS Occupational Therapy</option>
+              <option value="BSPT"        {% if student.course == 'BSPT'        %}selected{% endif %}>BS Physical Therapy</option>
+            </optgroup>
+            <optgroup label="📜 College of Law">
+              <option value="JD"          {% if student.course == 'JD'          %}selected{% endif %}>Juris Doctor</option>
+            </optgroup>
+            <optgroup label="🎓 Senior High School">
+              <option value="SHS-STEM"    {% if student.course == 'SHS-STEM'    %}selected{% endif %}>SHS - STEM</option>
+              <option value="SHS-ABM"     {% if student.course == 'SHS-ABM'     %}selected{% endif %}>SHS - ABM</option>
+              <option value="SHS-HUMSS"   {% if student.course == 'SHS-HUMSS'   %}selected{% endif %}>SHS - HUMSS</option>
+              <option value="SHS-TVL"     {% if student.course == 'SHS-TVL'     %}selected{% endif %}>SHS - TVL</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Year Level</label>
+          <select name="level" class="form-input">
+            <option value="1st Year" {% if student.level == '1st Year' %}selected{% endif %}>1st Year</option>
+            <option value="2nd Year" {% if student.level == '2nd Year' %}selected{% endif %}>2nd Year</option>
+            <option value="3rd Year" {% if student.level == '3rd Year' or student.level == '3' %}selected{% endif %}>3rd Year</option>
+            <option value="4th Year" {% if student.level == '4th Year' %}selected{% endif %}>4th Year</option>
+          </select>
+        </div>
+        <div class="form-group span-2">
+          <label class="form-label">Address</label>
+          <input type="text" name="address" class="form-input" value="{{ student.address or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sessions Left</label>
+          <input type="number" name="sessions_left" class="form-input" value="{{ student.sessions_left }}" min="0" max="30">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:8px;">
+        <a href="{{ url_for('admin_students') }}" class="btn btn-danger btn-sm">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

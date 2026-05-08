@@ -1,0 +1,5 @@
+{
+  "js/ts.validate.enabled": false,
+  "html.validate.scripts": false,
+  "html.validate.styles": false
+}

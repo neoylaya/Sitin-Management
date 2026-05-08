@@ -1,0 +1,271 @@
+{% extends "AdminPage/layout.html" %}
+{% block title %}Students{% endblock %}
+{% block page_title %}Students Information{% endblock %}
+{% block breadcrumb_current %}Students{% endblock %}
+
+{% block content %}
+
+<div class="panel">
+  <div class="table-toolbar">
+    <div class="search-input-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" class="search-input" id="studentSearch" placeholder="Search students..." oninput="filterStudents()">
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button type="button" class="btn btn-primary" onclick="openAddStudent()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        Add Student
+      </button>
+      <form method="POST" action="{{ url_for('admin_reset_all_sessions') }}" onsubmit="return confirm('Reset ALL student sessions to 30? This cannot be undone.')">
+        <button type="submit" class="btn btn-gold">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+          Reset All Sessions
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {% if students %}
+  <div style="overflow-x:auto;">
+    <table class="data-table" id="studentsTable">
+      <thead>
+        <tr>
+          <th>ID Number</th>
+          <th>Name</th>
+          <th>Year Level</th>
+          <th>Course</th>
+          <th>Email</th>
+          <th>Sessions Left</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td style="font-family:'Syne',sans-serif; font-weight:700;">{{ s.student_id }}</td>
+          <td style="font-weight:500;">{{ s.lastname }}, {{ s.firstname }}</td>
+          <td>{{ s.level }}</td>
+          <td><span class="badge badge-blue">{{ s.course }}</span></td>
+          <td style="color:var(--text-2); font-size:0.8rem;">{{ s.email or '—' }}</td>
+          <td><span class="sessions-badge">{{ s.sessions_left }}</span></td>
+          <td>
+            <div class="actions-cell">
+              <a href="{{ url_for('admin_edit_student', student_id=s.student_id) }}" class="btn btn-success btn-sm">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit
+              </a>
+              <form method="POST" action="{{ url_for('admin_delete_student', student_id=s.student_id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete {{ s.firstname }} {{ s.lastname }}? This cannot be undone.')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                  Delete
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </div>
+    <p>No students registered yet</p>
+    <span>Students will appear here once they register.</span>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Add Student Modal ── -->
+<div class="modal-overlay" id="addStudentOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="addStudentModal" style="max-width:640px; max-height:88vh; overflow-y:auto;">
+    <div class="modal-header">
+      <div class="panel-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+      </div>
+      <h3>Add New Student</h3>
+      <button class="modal-close" onclick="closeAddStudent()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin_add_student') }}">
+
+      <!-- Section: Personal Information -->
+      <div style="font-size:0.62rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--indigo); margin-bottom:12px; padding-bottom:6px; border-bottom:1.5px solid var(--border);">
+        Personal Information
+      </div>
+      <div class="form-grid" style="margin-bottom:10px;">
+        <div class="form-group">
+          <label class="form-label">Last Name <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="lastname" class="form-input" placeholder="Dela Cruz" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">First Name <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="firstname" class="form-input" placeholder="Juan" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Middle Name</label>
+          <input type="text" name="middlename" class="form-input" placeholder="Santos">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ID Number <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="id" class="form-input" placeholder="2021-12345" required>
+        </div>
+        <div class="form-group span-2">
+          <label class="form-label">Address</label>
+          <input type="text" name="address" class="form-input" placeholder="City, Province">
+        </div>
+      </div>
+
+      <!-- Section: Academic Information -->
+      <div style="font-size:0.62rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--indigo); margin-bottom:12px; padding-bottom:6px; border-bottom:1.5px solid var(--border);">
+        Academic Information
+      </div>
+      <div class="form-grid" style="margin-bottom:10px;">
+        <div class="form-group">
+          <label class="form-label">Course</label>
+          <select name="course" class="form-input">
+            <option value="">Select course</option>
+            <optgroup label="🖥️ College of Computer Studies">
+              <option value="BSIT">BS Information Technology</option>
+              <option value="BSCS">BS Computer Science</option>
+            </optgroup>
+            <optgroup label="💼 College of Business and Accountancy">
+              <option value="BSA">BS Accountancy</option>
+              <option value="BSBA-FM">BSBA - Financial Management</option>
+              <option value="BSBA-MM">BSBA - Marketing Management</option>
+              <option value="BSBA-HRM">BSBA - Human Resource Management</option>
+              <option value="BSBA-OM">BSBA - Operations Management</option>
+              <option value="BSMA">BS Management Accounting</option>
+              <option value="BSEntrep">BS Entrepreneurship</option>
+            </optgroup>
+            <optgroup label="⚙️ College of Engineering">
+              <option value="BSCE">BS Civil Engineering</option>
+              <option value="BSEE">BS Electrical Engineering</option>
+              <option value="BSME">BS Mechanical Engineering</option>
+              <option value="BSIE">BS Industrial Engineering</option>
+              <option value="BSECE">BS Electronics Engineering</option>
+            </optgroup>
+            <optgroup label="📚 College of Education">
+              <option value="BEED">Bachelor of Elementary Education</option>
+              <option value="BSED-ENG">BSED - English</option>
+              <option value="BSED-MATH">BSED - Mathematics</option>
+              <option value="BSED-SCI">BSED - Science</option>
+              <option value="BSED-FIL">BSED - Filipino</option>
+              <option value="BSED-SOSHIL">BSED - Social Studies</option>
+              <option value="BPED">BS Physical Education</option>
+            </optgroup>
+            <optgroup label="🏥 College of Nursing">
+              <option value="BSN">BS Nursing</option>
+            </optgroup>
+            <optgroup label="🎨 College of Arts and Sciences">
+              <option value="ABCOM">AB Communication</option>
+              <option value="ABPOLSCI">AB Political Science</option>
+              <option value="BSPSY">BS Psychology</option>
+              <option value="BSBIO">BS Biology</option>
+              <option value="BSMATH">BS Mathematics</option>
+            </optgroup>
+            <optgroup label="🏛️ College of Architecture and Fine Arts">
+              <option value="BSARCH">BS Architecture</option>
+              <option value="BSID">BS Interior Design</option>
+              <option value="BSFA">BS Fine Arts</option>
+            </optgroup>
+            <optgroup label="🏨 College of Tourism and Hospitality Management">
+              <option value="BSTM">BS Tourism Management</option>
+              <option value="BSHM">BS Hospitality Management</option>
+            </optgroup>
+            <optgroup label="⚖️ College of Criminal Justice Education">
+              <option value="BSCRIM">BS Criminology</option>
+            </optgroup>
+            <optgroup label="💊 College of Pharmacy">
+              <option value="BSPHAR">BS Pharmacy</option>
+            </optgroup>
+            <optgroup label="⚓ College of Maritime Education">
+              <option value="BSMARE">BS Marine Engineering</option>
+              <option value="BSMT">BS Marine Transportation</option>
+            </optgroup>
+            <optgroup label="⚕️ College of Allied Medical Sciences">
+              <option value="BSMT-MED">BS Medical Technology</option>
+              <option value="BSRT">BS Radiologic Technology</option>
+              <option value="BSOT">BS Occupational Therapy</option>
+              <option value="BSPT">BS Physical Therapy</option>
+            </optgroup>
+            <optgroup label="📜 College of Law">
+              <option value="JD">Juris Doctor</option>
+            </optgroup>
+            <optgroup label="🎓 Senior High School">
+              <option value="SHS-STEM">SHS - STEM</option>
+              <option value="SHS-ABM">SHS - ABM</option>
+              <option value="SHS-HUMSS">SHS - HUMSS</option>
+              <option value="SHS-TVL">SHS - TVL</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Year Level</label>
+          <select name="level" class="form-input">
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+        <div class="form-group span-2">
+          <label class="form-label">Email Address</label>
+          <input type="email" name="email" class="form-input" placeholder="you@school.edu.ph">
+        </div>
+      </div>
+
+      <!-- Section: Security -->
+      <div style="font-size:0.62rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--indigo); margin-bottom:12px; padding-bottom:6px; border-bottom:1.5px solid var(--border);">
+        Security
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Password <span style="color:var(--danger)">*</span></label>
+          <input type="password" name="password" class="form-input" placeholder="Create a password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password <span style="color:var(--danger)">*</span></label>
+          <input type="password" name="confirm_password" class="form-input" placeholder="Repeat password" required>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" onclick="closeAddStudent()">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Register Student
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function filterStudents() {
+    const q = document.getElementById('studentSearch').value.toLowerCase();
+    document.querySelectorAll('#studentsTable tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+
+  function openAddStudent() {
+    document.getElementById('addStudentOverlay').classList.add('open');
+  }
+
+  function closeAddStudent() {
+    document.getElementById('addStudentOverlay').classList.remove('open');
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('addStudentOverlay')) closeAddStudent();
+  }
+</script>
+{% endblock %}

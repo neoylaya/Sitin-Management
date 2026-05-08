@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CCS | Community</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='community.css') }}">
+</head>
+<body>
+
+  <nav>
+    <a href="/" class="logo">
+      <img src="{{ url_for('static', filename='uclogo.png') }}" alt="UC CCS Logo" class="nav-logo-img">
+      <div class="logo-text">
+        <span class="logo-title">University of Cebu</span>
+        <span class="logo-sub">CCS SIT-IN MONITORING</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/community" class="active">Community</a>
+      <a href="/about">About</a>
+      <a class="btn-ghost" href="/login">Login</a>
+      <a class="btn-solid" href="/register">Register</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- PAGE HEADER -->
+    <section class="page-header">
+      <div class="page-header-inner">
+        <div class="badge">CCS Community</div>
+        <h1>Connect with the<br><span>CCS Family</span></h1>
+        <p class="header-desc">
+          Stay updated with announcements, lab schedules, student resources,
+          and everything happening in the College of Computer Studies.
+        </p>
+      </div>
+    </section>
+
+    <!-- ANNOUNCEMENTS -->
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-label">Latest Updates</div>
+        <h2 class="section-title">Announcements</h2>
+
+        <div class="announcements-list">
+
+          <div class="announcement-card pinned">
+            <div class="ann-meta">
+              <span class="ann-tag pin">📌 Pinned</span>
+              <span class="ann-date">Feb 15, 2026</span>
+            </div>
+            <h4>Sit-In System Now Live!</h4>
+            <p>The CCS Sit-In Monitoring System is officially launched. All students must register and use the system to log their lab sessions starting this semester.</p>
+            <a href="/register" class="ann-link">Register Now →</a>
+          </div>
+
+          <div class="announcement-card">
+            <div class="ann-meta">
+              <span class="ann-tag">📢 General</span>
+              <span class="ann-date">Feb 10, 2026</span>
+            </div>
+            <h4>Lab Schedule for 2nd Semester 2025–2026</h4>
+            <p>Updated lab availability schedules have been posted. Students are advised to check the schedule before visiting the labs to avoid conflicts.</p>
+          </div>
+
+          <div class="announcement-card">
+            <div class="ann-meta">
+              <span class="ann-tag maintenance">🔧 Maintenance</span>
+              <span class="ann-date">Feb 5, 2026</span>
+            </div>
+            <h4>Lab 3 Maintenance — Feb 7 to Feb 9</h4>
+            <p>Computer Laboratory 3 will be unavailable for maintenance from February 7–9. Please use Lab 1 or Lab 2 during this period.</p>
+          </div>
+
+          <div class="announcement-card">
+            <div class="ann-meta">
+              <span class="ann-tag event">🎉 Event</span>
+              <span class="ann-date">Jan 28, 2026</span>
+            </div>
+            <h4>CCS Week 2026 — Save the Date!</h4>
+            <p>CCS Week is coming this March! Expect tech talks, coding competitions, and more. Watch this space for updates and registration details.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- RESOURCES -->
+    <section class="section alt">
+      <div class="section-inner">
+        <div class="section-label">Student Resources</div>
+        <h2 class="section-title">Helpful <span>Links & Info</span></h2>
+
+        <div class="resources-grid">
+
+          <div class="resource-card">
+            <div class="res-icon">🗓️</div>
+            <h4>Lab Schedules</h4>
+            <p>View the weekly schedule for all CCS computer labs and plan your sessions accordingly.</p>
+            <span class="res-link">View Schedule →</span>
+          </div>
+
+          <div class="resource-card">
+            <div class="res-icon">📜</div>
+            <h4>Lab Rules & Regulations</h4>
+            <p>Familiarize yourself with the CCS lab policies before your sit-in session to avoid violations.</p>
+            <span class="res-link">Read Rules →</span>
+          </div>
+
+          <div class="resource-card">
+            <div class="res-icon">💻</div>
+            <h4>Available Software</h4>
+            <p>Check the list of software installed in each lab so you can pick the right room for your work.</p>
+            <span class="res-link">View Software →</span>
+          </div>
+
+          <div class="resource-card">
+            <div class="res-icon">🆘</div>
+            <h4>Tech Support</h4>
+            <p>Experiencing issues in the lab? Report a problem to the CCS lab technician directly.</p>
+            <span class="res-link">Contact Support →</span>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- COMMUNITY STATS -->
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-label">By the Numbers</div>
+        <h2 class="section-title">Our <span>Community</span></h2>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-num">500+</div>
+            <div class="stat-label">Registered Students</div>
+            <p>CCS students actively enrolled this semester</p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">5</div>
+            <div class="stat-label">Computer Labs</div>
+            <p>Fully equipped labs available for student use</p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">1,200+</div>
+            <div class="stat-label">Sessions Logged</div>
+            <p>Sit-in sessions tracked since the system launched</p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">30+</div>
+            <div class="stat-label">Faculty & Staff</div>
+            <p>Dedicated CCS educators and lab administrators</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <div class="cta-inner">
+        <h2>Join the Community</h2>
+        <p>Register now to access the system and stay connected with CCS.</p>
+        <div class="cta-btns">
+          <a href="/register" class="btn-primary">Create Account</a>
+          <a href="/login" class="btn-secondary">Sign In</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>
