@@ -136,6 +136,7 @@
           <th>Name</th>
           <th>Purpose</th>
           <th>Laboratory</th>
+          <th>PC</th>
           <th>Login</th>
           <th>Logout</th>
           <th>Date</th>
@@ -148,6 +149,7 @@
           <td style="font-weight:500;">{{ r.lastname }}, {{ r.firstname }}</td>
           <td><span class="badge badge-violet">{{ r.purpose }}</span></td>
           <td><span class="badge badge-gold">{{ r.lab_room }}</span></td>
+          <td><span class="badge badge-blue">{{ r.pc_number or '—' }}</span></td>
           <td style="color:var(--text-2); font-size:0.8rem;">{{ r.time_in.split(' ')[1] if ' ' in r.time_in else r.time_in }}</td>
           <td style="color:var(--text-2); font-size:0.8rem;">{{ r.time_out.split(' ')[1] if r.time_out and ' ' in r.time_out else (r.time_out or '—') }}</td>
           <td style="color:var(--text-2); font-size:0.8rem;">{{ r.time_in.split(' ')[0] if ' ' in r.time_in else '—' }}</td>
@@ -172,7 +174,7 @@
 <script>
   function getTableData() {
     const rows = document.querySelectorAll('#reportsTable tbody tr');
-    const headers = ['ID Number', 'Name', 'Purpose', 'Laboratory', 'Login', 'Logout', 'Date'];
+    const headers = ['ID Number', 'Name', 'Purpose', 'Laboratory', 'PC', 'Login', 'Logout', 'Date'];
     const data = [];
     rows.forEach(row => {
       const cells = row.querySelectorAll('td');

@@ -35,6 +35,7 @@
           <th>Course</th>
           <th>Purpose</th>
           <th>Lab Room</th>
+          <th>PC</th>
           <th>Date</th>
           <th>Time In</th>
           <th>Action</th>
@@ -48,8 +49,9 @@
           <td><span class="badge badge-blue">{{ s.course }}</span></td>
           <td><span class="badge badge-violet">{{ s.purpose }}</span></td>
           <td><span class="badge badge-gold">{{ s.lab_room }}</span></td>
+          <td><span class="badge badge-blue">{{ s.pc_number or '—' }}</span></td>
           <td style="color:var(--text-2); font-size:0.8rem; white-space:nowrap;">
-            {{ s.time_in.split(' ')[0] if ' ' in s.time_in else '—' }}
+              {{ s.time_in.split(' ')[0] if ' ' in s.time_in else '—' }}
           </td>
           <td style="color:var(--text-2); font-size:0.8rem; white-space:nowrap;">
             {{ s.time_in.split(' ')[1] if ' ' in s.time_in else s.time_in }}

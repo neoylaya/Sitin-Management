@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
   <title>CCS | History</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -406,6 +407,7 @@
                     <th>#</th>
                     <th>Purpose</th>
                     <th>Lab Room</th>
+                    <th>PC</th>
                     <th>Date</th>
                     <th>Time In</th>
                     <th>Time Out</th>
@@ -424,6 +426,7 @@
                     <td style="color:var(--text-3);font-size:0.75rem;">{{ loop.index }}</td>
                     <td><span class="badge badge-violet">{{ r.purpose }}</span></td>
                     <td><span class="badge badge-gold">{{ r.lab_room }}</span></td>
+                    <td><span class="badge badge-blue">{{ r.pc_number or '—' }}</span></td>
                     <td style="color:var(--text-2);font-size:0.78rem;white-space:nowrap;">{{ date_val }}</td>
                     <td style="color:var(--text-2);font-size:0.78rem;white-space:nowrap;">{{ time_in_val }}</td>
                     <td style="color:var(--text-2);font-size:0.78rem;white-space:nowrap;">{{ time_out_val }}</td>

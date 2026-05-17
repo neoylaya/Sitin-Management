@@ -429,3 +429,96 @@ body::before {
 ::-webkit-scrollbar-track { background: #e8eaf6; }
 ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.25); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--indigo); }
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ════════════════════════════════════════════════ */
+
+/* Large (1280px) */
+@media (max-width: 1280px) {
+  .three-col { grid-template-columns: 1fr 250px; }
+  .section-content { padding: 24px 24px; }
+  .breadcrumb { padding: 14px 24px; }
+  .topnav { padding: 0 24px; }
+}
+
+/* Medium-large (1100px) */
+@media (max-width: 1100px) {
+  .three-col { grid-template-columns: 1fr 230px; }
+  .rules-list { grid-template-columns: 1fr; }
+  .nav-tab { padding: 6px 12px; font-size: 0.78rem; }
+}
+
+/* Tablets (900px) */
+@media (max-width: 900px) {
+  .topnav { padding: 0 16px; }
+  .topnav-left { gap: 20px; }
+  .brand-sub { display: none; }
+  .nav-username { display: none; }
+
+  .three-col {
+    grid-template-columns: 1fr;
+  }
+  .three-col .panel:nth-child(1) { grid-column: 1; grid-row: 2; }
+  .three-col .panel:nth-child(2) { grid-column: 1; grid-row: 1; }
+  .three-col .panel:nth-child(3) { grid-column: 1; grid-row: 3; }
+
+  .rules-inner { grid-template-columns: 1fr; gap: 16px; }
+  .rules-header { border-right: none; border-bottom: 1.5px solid var(--border); padding-right: 0; padding-bottom: 16px; }
+
+  .section-content { padding: 18px 16px; }
+  .breadcrumb { padding: 12px 16px; }
+  .bc-title { font-size: 1.1rem; }
+
+  .nav-tab { padding: 5px 10px; font-size: 0.76rem; }
+  .nav-tab svg { width: 13px; height: 13px; }
+}
+
+/* Small tablets (768px) */
+@media (max-width: 768px) {
+  .topnav { height: 54px; }
+  .page-wrapper { padding-top: 54px; }
+
+  .nav-tabs { gap: 1px; overflow-x: auto; }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab { padding: 5px 9px; font-size: 0.72rem; white-space: nowrap; }
+
+  .panel { padding: 16px; border-radius: var(--radius-lg); }
+
+  .rules-list { grid-template-columns: 1fr; gap: 8px; }
+
+  .ann-card { padding: 14px 16px; }
+  .ann-title { font-size: 0.84rem; }
+  .ann-body { font-size: 0.78rem; }
+
+  .bc-title { font-size: 1rem; }
+  .bc-path { display: none; }
+}
+
+/* Mobile (480px) */
+@media (max-width: 480px) {
+  .topnav { padding: 0 12px; }
+  .brand-logo { height: 28px; }
+  .brand-title { font-size: 0.8rem; }
+
+  .nav-tab { padding: 4px 8px; font-size: 0.68rem; }
+  .nav-tab svg { width: 12px; height: 12px; }
+
+  .btn-logout { padding: 5px 10px; font-size: 0.7rem; }
+  .btn-logout svg { display: none; }
+
+  .section-content { padding: 12px; }
+  .breadcrumb { padding: 10px 12px; }
+
+  .panel { padding: 14px; }
+
+  .profile-pic-wrap { width: 72px; height: 72px; }
+  .student-name { font-size: 0.82rem; }
+
+  .info-item { padding: 7px 9px; }
+  .info-value { font-size: 0.78rem; }
+
+  .ann-card { padding: 12px 14px; }
+
+  .rules-list li { font-size: 0.76rem; }
+}

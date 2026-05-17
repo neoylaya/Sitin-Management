@@ -476,3 +476,22 @@ select option[value=""] {
   border: 1px solid rgba(16, 185, 129, 0.25);
   color: #065f46;
 }
+
+@media (max-width: 768px) {
+  .form-header { padding: 28px 28px; }
+  .form-body { padding: 28px 28px 32px; }
+  .fields-grid { grid-template-columns: 1fr; }
+  .fields-grid .full { grid-column: 1; }
+  nav { padding: 0 4%; }
+  .nav-links a:not(.btn-ghost):not(.btn-solid) { display: none; }
+  .steps { display: none; }
+}
+
+@media (max-width: 480px) {
+  .form-header { padding: 22px 18px; }
+  .form-body { padding: 22px 18px 28px; }
+  h2 { font-size: 1.4rem; }
+  .form-actions { flex-direction: column; align-items: stretch; }
+  button[type="submit"] { width: 100%; }
+  main { padding: 88px 12px 40px; }
+}

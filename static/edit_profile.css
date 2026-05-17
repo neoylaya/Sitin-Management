@@ -186,3 +186,16 @@
   background: rgba(99,102,241,0.08); color: var(--indigo);
   padding: 4px 14px; border-radius: 99px; border: 1px solid var(--border);
 }
+
+@media (max-width: 900px) {
+  .ep-layout { grid-template-columns: 1fr; }
+  .ep-photo-panel { grid-column: 1; }
+  .ep-form-panel  { grid-column: 1; }
+}
+
+@media (max-width: 600px) {
+  .ep-field-group { grid-template-columns: 1fr; }
+  .ep-field.full  { grid-column: 1; }
+  .ep-actions { flex-direction: column; align-items: stretch; }
+  .btn-cancel, .btn-save { width: 100%; justify-content: center; }
+}

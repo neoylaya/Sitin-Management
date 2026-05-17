@@ -517,3 +517,24 @@ h1 span {
   .lb-section { padding: 50px 4% 60px; }
   .nav-links a:not(.btn-ghost):not(.btn-solid) { display: none; }
 }
+
+@media (max-width: 768px) {
+  .two-col { grid-template-columns: 1fr; }
+  .features-grid { grid-template-columns: 1fr 1fr; }
+  .about-block { grid-template-columns: 1fr; gap: 24px; }
+  .about-stats { gap: 20px; }
+  .cta-section { padding: 40px 24px; margin: 20px 4% 40px; }
+  .cta-section h2 { font-size: 1.5rem; }
+  .nav-links a:not(.btn-ghost):not(.btn-solid) { display: none; }
+  .resources-grid { grid-template-columns: 1fr 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 480px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .resources-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .cta-section { padding: 32px 18px; }
+  .page-header { padding: 60px 4% 40px; }
+  .section { padding: 40px 4%; }
+}

@@ -200,6 +200,7 @@ def init_db():
     add_column_if_missing("student_ratings",      "raw_score",       "INTEGER NOT NULL DEFAULT 0")
     add_column_if_missing("feedback", "rating",         "INTEGER NOT NULL DEFAULT 0")
     add_column_if_missing("feedback", "session_id_ref", "INTEGER")
+    add_column_if_missing("sitin_sessions",       "pc_number",       "TEXT")
 
     conn.execute("""
         UPDATE student_ratings
@@ -707,10 +708,11 @@ def admin_sitin_submit():
     if active:
         flash("This student is already sitting in.", "error")
         conn.close(); return redirect(url_for("admin_search"))
+    pc_number = request.form.get("pc_number", "").strip()
     conn.execute("""
-        INSERT INTO sitin_sessions (student_id,purpose,lab_room,time_in,status)
-        VALUES (?,?,?,?,'active')
-    """, (student_id, purpose, lab_room, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        INSERT INTO sitin_sessions (student_id,purpose,lab_room,pc_number,time_in,status)
+        VALUES (?,?,?,?,?,'active')
+    """, (student_id, purpose, lab_room, pc_number or None, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.commit(); conn.close()
     flash(f"Student {student_id} has been logged in successfully!", "success")
     return redirect(url_for("admin_current_sitin"))
@@ -746,9 +748,9 @@ def admin_reservation_sitin(res_id):
         return redirect(url_for("admin_reservation") + "#requests")
 
     conn.execute("""
-        INSERT INTO sitin_sessions (student_id, purpose, lab_room, time_in, status)
-        VALUES (?, ?, ?, ?, 'active')
-    """, (res["student_id"], res["purpose"], res["lab_room"],
+        INSERT INTO sitin_sessions (student_id, purpose, lab_room, pc_number, time_in, status)
+        VALUES (?, ?, ?, ?, ?, 'active')
+    """, (res["student_id"], res["purpose"], res["lab_room"], res["pc_number"],
           datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.execute("UPDATE reservations SET status='used' WHERE id=?", (res_id,))
     conn.commit(); conn.close()
@@ -845,7 +847,7 @@ def admin_current_sitin():
     if not admin_required(): return redirect(url_for("login"))
     conn     = get_db()
     sessions = conn.execute("""
-        SELECT ss.id, ss.student_id, ss.purpose, ss.lab_room, ss.time_in,
+        SELECT ss.id, ss.student_id, ss.purpose, ss.lab_room, ss.pc_number, ss.time_in,
                s.firstname, s.lastname, s.course
         FROM sitin_sessions ss JOIN students s ON ss.student_id=s.student_id
         WHERE ss.status='active' ORDER BY ss.time_in DESC
@@ -858,7 +860,7 @@ def admin_sitin_records():
     if not admin_required(): return redirect(url_for("login"))
     conn    = get_db()
     records = conn.execute("""
-        SELECT ss.id,ss.student_id,ss.purpose,ss.lab_room,ss.time_in,ss.time_out,
+        SELECT ss.id,ss.student_id,ss.purpose,ss.lab_room,ss.pc_number,ss.time_in,ss.time_out,
                s.firstname,s.lastname,s.course
         FROM sitin_sessions ss JOIN students s ON ss.student_id=s.student_id
         WHERE ss.status='done' ORDER BY ss.id DESC
@@ -883,7 +885,7 @@ def admin_sitin_reports():
     date_to    = request.args.get("date_to", "").strip()
     lab_filter = request.args.get("lab_filter", "").strip()
     query = """
-        SELECT ss.id,ss.student_id,ss.purpose,ss.lab_room,ss.time_in,ss.time_out,
+        SELECT ss.id,ss.student_id,ss.purpose,ss.lab_room,ss.pc_number,ss.time_in,ss.time_out,
                s.firstname,s.lastname,s.course
         FROM sitin_sessions ss JOIN students s ON ss.student_id=s.student_id
         WHERE ss.status='done'

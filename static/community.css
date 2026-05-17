@@ -414,3 +414,19 @@ h1 span {
 }
 
 .btn-secondary:hover { background: rgba(255,255,255,0.25); }
+
+@media (max-width: 768px) {
+  nav { padding: 0 4%; }
+  .nav-links a:not(.btn-ghost):not(.btn-solid) { display: none; }
+  .two-col { grid-template-columns: 1fr; }
+  .features-grid { grid-template-columns: 1fr 1fr; }
+  .about-block { grid-template-columns: 1fr; gap: 24px; }
+  .cta-section { padding: 40px 24px; margin: 20px 4% 40px; }
+  .section { padding: 40px 4%; }
+}
+
+@media (max-width: 480px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .page-header { padding: 60px 4% 40px; }
+  .cta-section h2 { font-size: 1.4rem; }
+}
